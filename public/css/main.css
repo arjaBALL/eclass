@@ -1,0 +1,180 @@
+@font-face {
+	font-family: "Poppins";
+	src: url("../../public/Poppins-Regular.ttf") format("truetype");
+	font-weight: 400;
+	font-style: normal;
+}
+
+body {
+	font-family: "Poppins", sans-serif;
+	margin: 0;
+	padding: 0;
+	display: flex;
+}
+
+/* Sidebar */
+#sidebar {
+	width: 270px;
+	background: #34414e;
+	color: #fff;
+	min-height: 100vh;
+	transition: width 0.3s ease;
+	position: fixed;
+	top: 0;
+	left: 0;
+	overflow-x: hidden;
+	overflow-y: auto;
+	z-index: 1000;
+}
+
+#sidebar.minimized {
+	width: 80px;
+}
+
+/* Nav links */
+#sidebar .nav-link,
+#sidebar .dropdown-toggle {
+	color: #adb5bd;
+	padding: 10px 20px;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	white-space: nowrap;
+	transition: all 0.3s ease;
+}
+
+#sidebar .nav-link:hover,
+#sidebar .dropdown-toggle:hover {
+	background-color: #495057;
+	color: #fff;
+}
+
+/* Hide text when minimized */
+#sidebar.minimized .nav-link span,
+#sidebar.minimized .dropdown-toggle span,
+#sidebar.minimized .fs-5 {
+	display: none;
+}
+
+#sidebar.minimized .nav-link,
+#sidebar.minimized .dropdown-toggle {
+	justify-content: center;
+	padding: 10px 0;
+	text-align: center;
+}
+
+/* Submenu positioning when minimized */
+#sidebar.minimized .dropdown-menu {
+	position: fixed !important;
+	left: 80px !important;
+	top: auto !important;
+	width: 190px;
+	margin: 0 !important;
+	transform: none !important;
+}
+
+#sidebar.minimized .dropdown-menu.show {
+	display: block;
+}
+
+/* Ensure submenu items do not wrap */
+#sidebar .dropdown-menu .dropdown-item {
+	white-space: nowrap;
+}
+
+/* Normal dropdown behavior */
+#sidebar:not(.minimized) .dropdown-menu {
+	position: static;
+	width: 100%;
+}
+
+/* Main content */
+#main-content {
+	margin-left: 270px;
+	transition: margin-left 0.3s ease;
+	padding: 20px;
+	flex: 1;
+	width: calc(100% - 250px);
+}
+
+#sidebar.minimized ~ #main-content {
+	margin-left: 80px;
+	width: calc(100% - 80px);
+}
+
+/* Toggle button */
+.toggle-btn {
+	background: none;
+	border: none;
+	color: white;
+	font-size: 20px;
+	cursor: pointer;
+	transition: transform 0.3s ease;
+}
+
+.toggle-btn:hover {
+	transform: scale(1.1);
+}
+
+table.table tbody tr.highlight-row td {
+	background-color: #f7b2b2 !important;
+}
+
+.table,
+.dataTables_info,
+.dataTables_length,
+.btn-primary {
+	font-size: 10pt;
+}
+
+.table thead th {
+	background-color: #f3f8f8;
+}
+
+.form-select-sm {
+	padding-top: 0.25rem;
+	padding-bottom: 0.25rem;
+	padding-left: 0.5rem;
+	font-size: 0.875rem;
+	border-radius: 0.2rem;
+}
+
+.bg-style {
+	background-color: #f7b2b2;
+	border-bottom-left-radius: 6rem;
+	border-top-left-radius: 0;
+	border-top-right-radius: 0;
+	border-bottom-right-radius: 0;
+}
+
+.hover-lift {
+	transition: all 0.3s ease;
+	background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+}
+.hover-lift:hover {
+	transform: translateY(-6px);
+	box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.1) !important;
+}
+
+.card-bg {
+	background-color: #60676e2f;
+}
+.pagination-container {
+	text-align: right;
+}
+#ReportTable-top-controls label {
+	font-weight: 500;
+}
+.pagination .page-item.active .page-link {
+	background-color: #007bff;
+	border-color: #007bff;
+	color: white;
+}
+.pagination .page-link {
+	color: #007bff;
+	cursor: pointer;
+}
+
+.stamp {
+	background-color: #ffffff2b;
+}
