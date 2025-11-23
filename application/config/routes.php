@@ -57,4 +57,6 @@ $route['student'] = 'main/student';
 $route['subject'] = 'main/subject';
 $route['teacher'] = 'main/teacher';
 $route['section'] = 'main/section';
+$route['schedules'] = 'main/schedule';
+$route['subject_assignment'] = 'main/subject_assignment';
 $route['department'] = 'main/department';

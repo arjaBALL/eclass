@@ -1,9 +1,11 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Main extends CI_Controller {
+class Main extends CI_Controller
+{
 
-     public function __construct() {
+    public function __construct()
+    {
         parent::__construct();
         $this->load->library('Data_loader');
         $this->load->helper('url');
@@ -11,57 +13,98 @@ class Main extends CI_Controller {
 
     public function index()
     {
-        $data['content'] = 'main/dashboard';  
-        $data['data'] = [];            
+        $data['content'] = 'main/dashboard';
+        $data['data'] = [];
         $this->load->view('main/main', $data);
     }
 
-    public function student() {
+    public function student()
+    {
         $data = array_merge(
-        // $this->get_session_data(),
+            // $this->get_session_data(),
             $this->data_loader->dropdowns(),
-            ['content' => 'student',
-                'scripts' => ['student', 'sweetalert_custom']],  
+            [
+                'content' => 'student',
+                'scripts' => ['students']
+            ],
         );
         $this->load->view('main/main', $data);
     }
 
-    public function teacher() {
+    public function teacher()
+    {
         $data = array_merge(
-        // $this->get_session_data(),
+            // $this->get_session_data(),
             $this->data_loader->dropdowns(),
-            ['content' => 'teacher',
-                'scripts' => ['teacher', 'sweetalert_custom']],  
+            [
+                'content' => 'teacher',
+                'scripts' => ['teachers']
+            ],
         );
         $this->load->view('main/main', $data);
     }
 
-    public function subject() {
+    public function subject()
+    {
         $data = array_merge(
-        // $this->get_session_data(),
+            // $this->get_session_data(),
             $this->data_loader->dropdowns(),
-            ['content' => 'subject',
-                'scripts' => ['subject', 'sweetalert_custom']],  
+            [
+                'content' => 'subject',
+                'scripts' => ['subjects']
+            ],
         );
         $this->load->view('main/main', $data);
     }
 
-    public function section() {
+    public function section()
+    {
         $data = array_merge(
-        // $this->get_session_data(),
+            // $this->get_session_data(),
             $this->data_loader->dropdowns(),
-            ['content' => 'section',
-                'scripts' => ['section', 'sweetalert_custom']],  
+            [
+                'content' => 'section',
+                'scripts' => ['sections']
+            ],
         );
         $this->load->view('main/main', $data);
     }
 
-    public function department() {
+    public function department()
+    {
         $data = array_merge(
-        // $this->get_session_data(),
+            // $this->get_session_data(),
             $this->data_loader->dropdowns(),
-            ['content' => 'department',
-                'scripts' => ['department', 'sweetalert_custom']],  
+            [
+                'content' => 'department',
+                'scripts' => ['departments']
+            ],
+        );
+        $this->load->view('main/main', $data);
+    }
+
+    public function schedule()
+    {
+        $data = array_merge(
+            // $this->get_session_data(),
+            $this->data_loader->dropdowns(),
+            [
+                'content' => 'schedules',
+                'scripts' => ['schedule']
+            ],
+        );
+        $this->load->view('main/main', $data);
+    }
+
+    public function subject_assignment()
+    {
+        $data = array_merge(
+            // $this->get_session_data(),
+            $this->data_loader->dropdowns(),
+            [
+                'content' => 'subject_assignment',
+                'scripts' => ['subject_assignment']
+            ],
         );
         $this->load->view('main/main', $data);
     }

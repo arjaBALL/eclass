@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -15,21 +16,22 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
+
 <body style="display: flex; margin: 0;">
   <?php $this->load->view('main/sidebar'); ?>
-  
+
   <div id="main-content">
     <?php $this->load->view($content, isset($data) ? $data : []); ?>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="<?= base_url('public/js/main.js') ?>"></script>
-  <script src="<?= base_url('public/js/pagination.js') ?>"></script>
-  
+  <!-- <script src="<?= base_url('public/js/pagination.js') ?>"></script> -->
+
   <?php if (!empty($scripts)): ?>
     <?php foreach ($scripts as $script): ?>
       <script src="<?= base_url('public/js/' . $script . '.js') ?>"></script>
     <?php endforeach; ?>
   <?php endif; ?>
 </body>
+
 </html>

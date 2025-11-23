@@ -56,8 +56,8 @@
                 <span>Workload Allocation</span>
             </a>
             <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="<?= site_url('schedule') ?>">Schedule</a></li>
-                <li><a class="dropdown-item" href="#">Subject Assignment</a></li>
+                <li><a class="dropdown-item" href="<?= site_url('schedules') ?>">Schedule</a></li>
+                <li><a class="dropdown-item" href="<?= site_url('subject_assignment') ?>">Subject Assignment</a></li>
             </ul>
         </div>
 
@@ -81,7 +81,7 @@
             </a>
             <ul class="dropdown-menu">
                 <li><a class="dropdown-item" href="<?= site_url('student') ?>">Students</a></li>
-                <li><a class="dropdown-item" href="#">Subjects</a></li>
+                <li><a class="dropdown-item" href="<?= site_url('subject') ?>">Subjects</a></li>
                 <li><a class="dropdown-item" href="<?= site_url('teacher') ?>">Teachers</a></li>
                 <li><a class="dropdown-item" href="<?= site_url('section') ?>">Section</a></li>
                 <li><a class="dropdown-item" href="<?= site_url('department') ?>">Department</a></li>
