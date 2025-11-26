@@ -30,8 +30,8 @@
                                     class="form-select form-select-sm">
                                     <option value="">Choose:</option>
                                     <?php foreach ($subjects as $subject): ?>
-                                        <option value="<?= $subject['id'] ?>"><?= $subject['subject_code'] ?>
-                                        </option>
+                                    <option value="<?= $subject['id'] ?>"><?= $subject['subject_code'] ?>
+                                    </option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
@@ -45,8 +45,9 @@
                                     <select id="teacherSelect" name="teacherSelect" class="form-select form-select-sm">
                                         <option value="">Choose:</option>
                                         <?php foreach ($teachers as $teacher): ?>
-                                            <option value="<?= $teacher['id'] ?>"><?= $teacher['lastname'] ?>
-                                            </option>
+                                        <option value="<?= $teacher['id'] ?>">
+                                            <?= $teacher['lastname'] . ', ' . $teacher['firstname'] . $teacher['middlename'] ?>
+                                        </option>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
@@ -60,8 +61,8 @@
                                         class="form-select form-select-sm">
                                         <option value="">Choose:</option>
                                         <?php foreach ($semesters as $semester): ?>
-                                            <option value="<?= $semester['id'] ?>"><?= $semester['semester'] ?>
-                                            </option>
+                                        <option value="<?= $semester['id'] ?>"><?= $semester['semester'] ?>
+                                        </option>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
@@ -85,9 +86,9 @@
             <select id="filterTeacherSelect" name="filterTeacherSelect" class="form-select form-select-sm">
                 <option value="">Choose:</option>
                 <?php foreach ($teachers as $teacher): ?>
-                    <option value="<?= $teacher['id'] ?>">
-                        <?= $teacher['lastname'] . ', ' . $teacher['firstname'] . $teacher['middlename'] ?>
-                    </option>
+                <option value="<?= $teacher['id'] ?>">
+                    <?= $teacher['lastname'] . ', ' . $teacher['firstname'] . $teacher['middlename'] ?>
+                </option>
                 <?php endforeach; ?>
 
             </select>
@@ -99,9 +100,9 @@
             <select id="filterSubjectSelect" name="filterSubjectSelect" class="form-select form-select-sm">
                 <option value="">Choose:</option>
                 <?php foreach ($subjects as $subject): ?>
-                    <option value="<?= $subject['id'] ?>">
-                        <?= $subject['subject_code'] ?>
-                    </option>
+                <option value="<?= $subject['id'] ?>">
+                    <?= $subject['subject_code'] ?>
+                </option>
                 <?php endforeach; ?>
 
             </select>

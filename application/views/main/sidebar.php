@@ -53,7 +53,7 @@
         <div class="dropdown mt-2">
             <a class="btn btn-dark dropdown-toggle w-100 text-start" href="#" role="button" data-bs-toggle="dropdown">
                 <i class="fa-solid fa-list-check"></i>
-                <span>Workload Allocation</span>
+                <span>Subject Allocation</span>
             </a>
             <ul class="dropdown-menu">
                 <li><a class="dropdown-item" href="<?= site_url('schedules') ?>">Schedule</a></li>

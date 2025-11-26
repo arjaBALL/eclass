@@ -90,7 +90,7 @@ class Main extends CI_Controller
             $this->data_loader->dropdowns(),
             [
                 'content' => 'schedules',
-                'scripts' => ['schedule']
+                'scripts' => ['schedules']
             ],
         );
         $this->load->view('main/main', $data);

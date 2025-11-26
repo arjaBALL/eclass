@@ -28,7 +28,8 @@ class Data_loader
             'statuses' => $this->CI->Utilities_model->get_all_status(),
             'roles' => $this->CI->Utilities_model->get_all_roles(),
             'teachers' => $this->CI->Utilities_model->get_all_teachers(),
-            'semesters' => $this->CI->Utilities_model->get_all_semesters()
+            'semesters' => $this->CI->Utilities_model->get_all_semesters(),
+            'rooms' => $this->CI->Utilities_model->get_all_rooms()
         ];
     }
 }

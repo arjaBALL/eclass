@@ -35,11 +35,10 @@ class Teacher_model extends CI_Model
         );
         $this->db->from('tbl_teachers t');
         $this->db->join('tbl_departments d', 'd.id = t.department_id', 'left');
-        $this->db->join('tbl_user_role r', 'd.id = t.role_id', 'left');
+        $this->db->join('tbl_user_role r', 'r.id = t.role_id', 'left');
         $this->db->join('tbl_status st', 'st.id = t.status_id', 'left');
         $this->db->order_by('t.lastname', 'ASC');
         $query = $this->db->get();
         return $query->result();
     }
 }
-

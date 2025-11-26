@@ -36,5 +36,16 @@ class Subject_assignment_model extends CI_Model
         return $this->db->get()->result();
     }
 
+    public function get_all_teacher_subjects($teacher_id)
+{
+    $this->db->select('sa.id, s.subject_name, s.subject_code, sm.semester');
+    $this->db->from('tbl_subject_assignments sa');
+    $this->db->join('tbl_subjects s', 's.id = sa.subject_id', 'left');
+     $this->db->join('tbl_semesters sm', 'sm.id = sa.semester_id', 'left');
+    $this->db->where('sa.teacher_id', $teacher_id);
+    $query = $this->db->get();
+    return $query->result();
 }
 
+
+}

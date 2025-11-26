@@ -13,6 +13,7 @@ class Api extends CI_Controller
         $this->load->model('Sections_model');
         $this->load->model('Department_model');
         $this->load->model('Subject_assignment_model');
+        $this->load->model('Schedules_model');
     }
 
     public function get_subjects()
@@ -48,6 +49,22 @@ class Api extends CI_Controller
         header('Content-Type: application/json');
         $departments = $this->Department_model->get_all_departments();
         echo json_encode($departments);
+    }
+
+      public function get_teacher_subjects()
+    {
+        header('Content-Type: application/json');
+         $user_id = $this->input->get('user_id');
+        $teacherSubject = $this->Subject_assignment_model->get_all_teacher_subjects($user_id);
+        echo json_encode($teacherSubject);
+    }
+
+      public function get_subject_schedules()
+    {
+        header('Content-Type: application/json');
+        $user_id = $this->input->get('user_id');
+        $teacherSubject = $this->Schedules_model->get_all_subjects_schedules($user_id);
+        echo json_encode($teacherSubject);
     }
 
     public function addStudent()
@@ -296,5 +313,80 @@ class Api extends CI_Controller
             echo json_encode(['status' => 'error', 'message' => 'Failed to insert subject']);
         }
     }
-}
 
+    public function addSchedules()
+    {
+        $subjectTeacherId = $this->input->post('subjectTeacherId');
+        $yearSelect = $this->input->post('yearSelect');
+        $classCode = $this->input->post('classCode');
+        $sectionSelect = $this->input->post('sectionSelect');
+        $dailySchedule = $this->input->post('dailySchedule');
+        $startTime = $this->input->post('startTime');
+        $endTime = $this->input->post('endTime');
+        $roomSelect = $this->input->post('roomSelect');
+
+        // Validate
+        if (
+            empty($subjectTeacherId) ||
+            empty($yearSelect) ||
+            empty($classCode) ||
+            empty($sectionSelect) ||
+            empty($dailySchedule) ||
+            empty($startTime) ||
+            empty($endTime) ||
+            empty($roomSelect)
+        ) {
+            echo json_encode(['status' => 'error', 'message' => 'All fields are required']);
+            return;
+        }
+
+        // Duplicate validation
+        $exists = $this->Schedules_model->validate_data(
+            $dailySchedule, 
+            $roomSelect, 
+            $classCode,  
+            $startTime, 
+            $endTime, 
+            $yearSelect, 
+            $sectionSelect, 
+            $subjectTeacherId
+        );
+
+        if ($exists) {
+            echo json_encode(['status' => 'error', 'message' => 'Schedule already exists']);
+            return;
+        }
+
+        $data = [
+            'class_code' => $classCode,
+            'teacher_subject_id' => $subjectTeacherId,
+            'year_level_id' => $yearSelect,
+            'section_id' => $sectionSelect,
+            'days_schedule' => $dailySchedule,
+            'time_start' => $startTime,
+            'time_end' => $endTime,
+            'room_id' => $roomSelect
+        ];
+
+        $schedule_id = $this->Schedules_model->insert_schedules($data);
+
+        if (!$schedule_id) {
+            echo json_encode(['status' => 'error', 'message' => 'Failed to insert schedule']);
+            return;
+        }
+    $assigned_count = $this->Schedules_model->auto_assign_students(
+        $sectionSelect,
+        $yearSelect,
+        $schedule_id
+    );
+
+    echo json_encode([
+        'status' => 'success',
+        'message' => 'Schedule created and ' . $assigned_count . ' students assigned.',
+        'schedule_id' => $schedule_id
+    ]);
+
+    }
+
+
+}

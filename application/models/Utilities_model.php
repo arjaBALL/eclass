@@ -74,4 +74,10 @@ class Utilities_model extends CI_Model
         $query = $this->db->get('tbl_semesters');
         return $query->result_array();
     }
+
+      public function get_all_rooms()
+    {
+        $query = $this->db->get('tbl_rooms');
+        return $query->result_array();
+    }
 }
