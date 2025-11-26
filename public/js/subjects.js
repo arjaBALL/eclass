@@ -54,7 +54,7 @@ $(document).ready(function () {
 			},
 			error: function (xhr, status, error) {
 				console.error("Fetch Error:", xhr.responseText);
-				$("#SubjectsData").html(
+				$("#subjectsData").html(
 					'<tr><td colspan="7" class="text-center text-danger">Error fetching data</td></tr>'
 				);
 			},

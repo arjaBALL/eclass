@@ -19,51 +19,91 @@
                     <h5 class="modal-title" id="subjectAssignmentModalLabel">Add New Subject Assignment</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="mb-2">
-                            <label for="subject" class="form-label"><small>Subject</small></label>
-                            <input type="text" name="subject" class="form-control form-control-sm" id="subject"
-                                aria-describedby="" required>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-6">
+                <form action="" id="subjectAssignmentForm">
+                    <div class="modal-body">
+                        <div class="row">
                             <div class="mb-2">
-                                <label for="filterTeacherSelect" class="form-label mb-0">
-                                    <small>Teacher</small>
+                                <label for="subjectAssignmentSelect" class="form-label mb-0">
+                                    <small>Subject</small>
                                 </label>
-                                <select id="filterTeacherSelect" name="filterTeacherSelect"
+                                <select id="subjectAssignmentSelect" name="subjectAssignmentSelect"
                                     class="form-select form-select-sm">
                                     <option value="">Choose:</option>
-                                    <?php foreach ($teachers as $teacher): ?>
-                                        <option value="<?= $teacher['id'] ?>"><?= $teacher['name'] ?>
+                                    <?php foreach ($subjects as $subject): ?>
+                                        <option value="<?= $subject['id'] ?>"><?= $subject['subject_code'] ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
                         </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="mb-2">
+                                    <label for="teacherSelect" class="form-label mb-0">
+                                        <small>Teacher</small>
+                                    </label>
+                                    <select id="teacherSelect" name="teacherSelect" class="form-select form-select-sm">
+                                        <option value="">Choose:</option>
+                                        <?php foreach ($teachers as $teacher): ?>
+                                            <option value="<?= $teacher['id'] ?>"><?= $teacher['lastname'] ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="mb-2">
+                                    <label for="semesterSelect" class="form-label mb-0">
+                                        <small>Semester</small>
+                                    </label>
+                                    <select id="semesterSelect" name="semesterSelect"
+                                        class="form-select form-select-sm">
+                                        <option value="">Choose:</option>
+                                        <?php foreach ($semesters as $semester): ?>
+                                            <option value="<?= $semester['id'] ?>"><?= $semester['semester'] ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary">Save changes</button>
-                </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save changes</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
     <div class="row">
         <div class="mb-3 col-2">
-            <label for="filterStatusSelect" class="form-label mb-0">
-                <small>Status</small>
+            <label for="filterTeacherSelect" class="form-label mb-0">
+                <small>Teacher</small>
             </label>
-            <select id="filterStatusSelect" name="filterStatusSelect" class="form-select form-select-sm">
+            <select id="filterTeacherSelect" name="filterTeacherSelect" class="form-select form-select-sm">
                 <option value="">Choose:</option>
-                <?php foreach ($teachers as $status): ?>
-                    <option value="<?= $status['id'] ?>"><?= $status['status'] ?>
+                <?php foreach ($teachers as $teacher): ?>
+                    <option value="<?= $teacher['id'] ?>">
+                        <?= $teacher['lastname'] . ', ' . $teacher['firstname'] . $teacher['middlename'] ?>
                     </option>
                 <?php endforeach; ?>
+
+            </select>
+        </div>
+        <div class="mb-3 col-2">
+            <label for="filterSubjectSelect" class="form-label mb-0">
+                <small>Subject</small>
+            </label>
+            <select id="filterSubjectSelect" name="filterSubjectSelect" class="form-select form-select-sm">
+                <option value="">Choose:</option>
+                <?php foreach ($subjects as $subject): ?>
+                    <option value="<?= $subject['id'] ?>">
+                        <?= $subject['subject_code'] ?>
+                    </option>
+                <?php endforeach; ?>
+
             </select>
         </div>
         <div class="col">
@@ -80,12 +120,13 @@
                 <th scope="col">
                     <input type="checkbox" id="selectAllToday" class="form-check-input">
                 </th>
-                <th scope="col">Department</th>
-                <th scope="col">Status</th>
+                <th scope="col">Teacher</th>
+                <th scope="col">Subject</th>
+                <th scope="col">Semester</th>
                 <th></th>
             </tr>
         </thead>
-        <tbody id="departmentData">
+        <tbody id="subjectAssignmentsData">
         </tbody>
     </table>
 </main>

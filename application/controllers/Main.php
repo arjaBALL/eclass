@@ -103,7 +103,7 @@ class Main extends CI_Controller
             $this->data_loader->dropdowns(),
             [
                 'content' => 'subject_assignment',
-                'scripts' => ['subject_assignment']
+                'scripts' => ['subject_assignments']
             ],
         );
         $this->load->view('main/main', $data);

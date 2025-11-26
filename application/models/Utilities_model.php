@@ -62,4 +62,16 @@ class Utilities_model extends CI_Model
         $query = $this->db->get('tbl_user_role');
         return $query->result_array();
     }
+
+    public function get_all_teachers()
+    {
+        $query = $this->db->get('tbl_teachers');
+        return $query->result_array();
+    }
+
+    public function get_all_semesters()
+    {
+        $query = $this->db->get('tbl_semesters');
+        return $query->result_array();
+    }
 }

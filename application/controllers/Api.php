@@ -12,6 +12,7 @@ class Api extends CI_Controller
         $this->load->model('Teacher_model');
         $this->load->model('Sections_model');
         $this->load->model('Department_model');
+        $this->load->model('Subject_assignment_model');
     }
 
     public function get_subjects()
@@ -183,6 +184,14 @@ class Api extends CI_Controller
         }
     }
 
+    public function get_subjectAssignments()
+    {
+        header('Content-Type: application/json');
+        $subjectAssignment = $this->Subject_assignment_model->get_all_subject_assignments();
+        echo json_encode($subjectAssignment);
+    }
+
+
     public function addSections()
     {
         $section = $this->input->post('section');
@@ -248,6 +257,43 @@ class Api extends CI_Controller
             echo json_encode(['status' => 'success']);
         } else {
             echo json_encode(['status' => 'error', 'message' => 'Failed to insert department']);
+        }
+    }
+
+    public function addSubjectAssignments()
+    {
+        $subjectAssignmentSelect = $this->input->post('subjectAssignmentSelect');
+        $teacherSelect = $this->input->post('teacherSelect');
+        $semesterSelect = $this->input->post('semesterSelect');
+
+        if (
+            empty($subjectAssignmentSelect) ||
+            empty($teacherSelect) ||
+            empty($semesterSelect)
+        ) {
+            echo json_encode(['status' => 'error', 'message' => 'All fields are required']);
+            return;
+        }
+
+        $exists = $this->Subject_assignment_model->validate_data($subjectAssignmentSelect, $teacherSelect, $semesterSelect);
+
+        if ($exists) {
+            echo json_encode(['status' => 'error', 'message' => 'Subject already exists']);
+            return;
+        }
+
+        $data = [
+            'subject_id' => $subjectAssignmentSelect,
+            'teacher_id' => $teacherSelect,
+            'semester_id' => $semesterSelect,
+        ];
+
+        $insertData = $this->Subject_assignment_model->insert_subject_assignments($data);
+
+        if ($insertData) {
+            echo json_encode(['status' => 'success']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Failed to insert subject']);
         }
     }
 }
