@@ -322,6 +322,12 @@ class Api extends CI_Controller
         }
     }
 
+    private function get_room_name($room_id)
+    {
+        $room = $this->db->where('id', $room_id)->get('tbl_rooms')->row();
+        return $room ? $room->room : 'Unknown';
+    }
+
     public function addSchedules()
     {
         $subjectTeacherId = $this->input->post('subjectTeacherId');
@@ -333,7 +339,7 @@ class Api extends CI_Controller
         $endTime = $this->input->post('endTime');
         $roomSelect = $this->input->post('roomSelect');
 
-        // Validate
+        // Validate required fields
         if (
             empty($subjectTeacherId) ||
             empty($yearSelect) ||
@@ -348,7 +354,7 @@ class Api extends CI_Controller
             return;
         }
 
-        // Duplicate validation
+        // Check for exact duplicate schedule
         $exists = $this->Schedules_model->validate_data(
             $dailySchedule,
             $roomSelect,
@@ -361,10 +367,49 @@ class Api extends CI_Controller
         );
 
         if ($exists) {
-            echo json_encode(['status' => 'error', 'message' => 'Schedule already exists']);
+            echo json_encode(['status' => 'error', 'message' => 'This schedule already exists']);
             return;
         }
 
+        // Check if teacher already has a schedule at this time on this day (EVEN WITH DIFFERENT ROOM)
+        $teacher_conflict = $this->Schedules_model->check_teacher_time_conflict(
+            $subjectTeacherId,
+            $dailySchedule,
+            $startTime,
+            $endTime
+        );
+
+        if ($teacher_conflict) {
+            echo json_encode([
+                'status' => 'error', 
+                'message' => 'Teacher already has a schedule on ' . $dailySchedule . ' from ' . 
+                            date('H:i', strtotime($teacher_conflict->time_start)) . ' to ' . 
+                            date('H:i', strtotime($teacher_conflict->time_end)) . 
+                            ' (Room: ' . $this->get_room_name($teacher_conflict->room_id) . 
+                            '). A teacher cannot have overlapping schedules.'
+            ]);
+            return;
+        }
+
+        // Check if room is already occupied at this time
+        $room_conflict = $this->Schedules_model->check_room_conflict(
+            $roomSelect,
+            $dailySchedule,
+            $startTime,
+            $endTime
+        );
+
+        if ($room_conflict) {
+            echo json_encode([
+                'status' => 'error', 
+                'message' => 'Room is already occupied on ' . $dailySchedule . ' from ' . 
+                            date('H:i', strtotime($room_conflict->time_start)) . ' to ' . 
+                            date('H:i', strtotime($room_conflict->time_end))
+            ]);
+            return;
+        }
+
+        // Create the schedule
         $data = [
             'class_code' => $classCode,
             'teacher_subject_id' => $subjectTeacherId,
@@ -382,19 +427,234 @@ class Api extends CI_Controller
             echo json_encode(['status' => 'error', 'message' => 'Failed to insert schedule']);
             return;
         }
+
+        // Get total students in this section/year
+        $total_students = $this->db
+            ->where('section_id', $sectionSelect)
+            ->where('year_level_id', $yearSelect)
+            ->where('status', 1)
+            ->get('tbl_student')
+            ->num_rows();
+
+        // Auto-assign students (with conflict checking)
         $assigned_count = $this->Schedules_model->auto_assign_students(
             $sectionSelect,
             $yearSelect,
             $schedule_id
         );
 
+        // Prepare success message
+        if ($assigned_count === $total_students) {
+            $message = 'Schedule created successfully. All ' . $assigned_count . ' students assigned.';
+        } else {
+            $skipped = $total_students - $assigned_count;
+            $message = 'Schedule created successfully. ' . $assigned_count . ' of ' . $total_students . 
+                    ' students assigned. (' . $skipped . ' students have conflicting schedules)';
+        }
+
         echo json_encode([
             'status' => 'success',
-            'message' => 'Schedule created and ' . $assigned_count . ' students assigned.',
-            'schedule_id' => $schedule_id
+            'message' => $message,
+            'schedule_id' => $schedule_id,
+            'assigned_count' => $assigned_count,
+            'total_students' => $total_students,
+            'skipped_count' => $total_students - $assigned_count
         ]);
-
     }
 
+    public function addStudentToSchedule()
+    {
+        $student_id = $this->input->post('student_id');
+        $status_id = $this->input->post('status_id');
+        $schedule_id = $this->input->post('schedule_id');
+
+        if (
+            empty($schedule_id) ||
+            empty($student_id) ||
+            empty($status_id)
+        ) {
+            echo json_encode(['status' => 'error', 'message' => 'All fields are required']);
+            return;
+        }
+
+        // Get the new schedule details
+        $new_schedule = $this->db
+            ->where('id', $schedule_id)
+            ->get('tbl_schedules')
+            ->row();
+
+        if (!$new_schedule) {
+            echo json_encode(['status' => 'error', 'message' => 'Schedule not found']);
+            return;
+        }
+
+        // Check if student already exists in this exact schedule
+        $already_exists = $this->db
+            ->where('student_id', $student_id)
+            ->where('schedule_id', $schedule_id)
+            ->get('tbl_student_schedules')
+            ->num_rows();
+
+        if ($already_exists > 0) {
+            echo json_encode(['status' => 'error', 'message' => 'Student is already assigned to this schedule']);
+            return;
+        }
+
+        // Check if student has a schedule at the SAME DAY and SAME TIME (conflict check)
+        $conflict = $this->db
+            ->select('s.*, r.room')
+            ->from('tbl_student_schedules ss')
+            ->join('tbl_schedules s', 's.id = ss.schedule_id', 'inner')
+            ->join('tbl_rooms r', 'r.id = s.room_id', 'left')
+            ->where('ss.student_id', $student_id)
+            ->where('s.days_schedule', $new_schedule->days_schedule)
+            // Check for time overlap: schedule_start < new_end AND schedule_end > new_start
+            ->where('s.time_start <', $new_schedule->time_end)
+            ->where('s.time_end >', $new_schedule->time_start)
+            // Only exclude dropped students (status_id = 3 for 'Drop')
+            ->where('ss.status_id !=', 3)
+            ->get()
+            ->row();
+
+        if ($conflict) {
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Student already has a schedule on ' . $conflict->days_schedule . 
+                            ' from ' . date('H:i', strtotime($conflict->time_start)) . ' to ' . 
+                            date('H:i', strtotime($conflict->time_end)) . 
+                            ' (Room: ' . $conflict->room . '). Cannot add to overlapping time slot.'
+            ]);
+            return;
+        }
+
+        // Assign student to schedule
+        $assigned_count = $this->Schedules_model->assign_students(
+            $student_id,
+            $schedule_id,
+            $status_id
+        );
+
+        if ($assigned_count > 0) {
+            echo json_encode([
+                'status' => 'success',
+                'message' => 'Student assigned to schedule successfully.'
+            ]);
+        } else {
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Failed to assign student to schedule.'
+            ]);
+        }
+    }
+
+    public function drop_student()
+    {
+        if (!$this->input->is_ajax_request()) {
+            echo json_encode(['status' => 'error', 'message' => 'Invalid request']);
+            return;
+        }
+
+        $student_schedule_id = $this->input->post('student_schedule_id');
+
+        if (empty($student_schedule_id)) {
+            echo json_encode(['status' => 'error', 'message' => 'Student schedule ID is required']);
+            return;
+        }
+
+        // Get the student schedule record
+        $student_schedule = $this->db
+            ->where('id', $student_schedule_id)
+            ->get('tbl_student_schedules')
+            ->row();
+
+        if (!$student_schedule) {
+            echo json_encode(['status' => 'error', 'message' => 'Student schedule not found']);
+            return;
+        }
+
+        // Get the drop status ID from tbl_student_status (status = 'Drop')
+        $drop_status = $this->db
+            ->where('status', 'Drop')
+            ->get('tbl_student_status')
+            ->row();
+
+        if (!$drop_status) {
+            echo json_encode(['status' => 'error', 'message' => 'Drop status not found in system']);
+            return;
+        }
+
+        // Update the student status in tbl_student_schedules to 'Drop'
+        $update_data = [
+            'status_id' => $drop_status->id
+        ];
+
+        $updated = $this->db
+            ->where('id', $student_schedule_id)
+            ->update('tbl_student_schedules', $update_data);
+
+        if ($updated) {
+            echo json_encode([
+                'status' => 'success',
+                'message' => 'Student has been dropped from the schedule'
+            ]);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Failed to drop student']);
+        }
+    }
+
+public function inlist_student()
+{
+    if (!$this->input->is_ajax_request()) {
+        echo json_encode(['status' => 'error', 'message' => 'Invalid request']);
+        return;
+    }
+
+    $student_schedule_id = $this->input->post('student_schedule_id');
+
+    if (empty($student_schedule_id)) {
+        echo json_encode(['status' => 'error', 'message' => 'Student schedule ID is required']);
+        return;
+    }
+
+    // Get the student schedule record
+    $student_schedule = $this->db
+        ->where('id', $student_schedule_id)
+        ->get('tbl_student_schedules')
+        ->row();
+
+    if (!$student_schedule) {
+        echo json_encode(['status' => 'error', 'message' => 'Student schedule not found']);
+        return;
+    }
+
+    // Get the Regular status ID from tbl_student_status (status = 'Regular')
+    $regular_status = $this->db
+        ->where('status', 'Regular')
+        ->get('tbl_student_status')
+        ->row();
+
+    if (!$regular_status) {
+        echo json_encode(['status' => 'error', 'message' => 'Regular status not found in system']);
+        return;
+    }
+
+    // Update the student status in tbl_student_schedules back to 'Regular'
+    $update_data = [
+        'status_id' => $regular_status->id
+    ];
+
+    $updated = $this->db
+        ->where('id', $student_schedule_id)
+        ->update('tbl_student_schedules', $update_data);
+
+    if ($updated) {
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'Student has been restored to the schedule'
+        ]);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Failed to restore student']);
+    }
+}
 
 }

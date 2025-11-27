@@ -178,3 +178,27 @@ table.table tbody tr.highlight-row td {
 .stamp {
 	background-color: #ffffff2b;
 }
+
+.left-box {
+	background: #ffffff;
+	color: rgb(0, 0, 0);
+	padding: 50px 40px;
+}
+
+.left-box h1 {
+	font-weight: bold;
+}
+
+.login-wrapper {
+	max-width: 900px;
+	background: #1111bd;
+	background: linear-gradient(
+		104deg,
+		rgb(0, 0, 234) 24%,
+		rgba(255, 255, 255, 1) 94%
+	);
+	border-radius: 12px;
+	box-shadow: 0 5px 25px rgba(0, 0, 0, 0.1);
+	overflow: hidden;
+	color: #f3f8f8;
+}

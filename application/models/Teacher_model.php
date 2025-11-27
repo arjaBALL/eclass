@@ -41,4 +41,18 @@ class Teacher_model extends CI_Model
         $query = $this->db->get();
         return $query->result();
     }
+
+    public function validate_user_login($username, $password){
+       $query = $this->db->get_where('tbl_teachers', [
+            'teacher_school_id' => $username,
+            'status_id' => 1
+        ]);
+        $user = $query->row();
+
+        if ($user && password_verify($password, $user->password)) {
+            return $user;
+        } else {
+            return false;
+        }
+    }
 }

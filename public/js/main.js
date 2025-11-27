@@ -26,12 +26,4 @@ document.addEventListener("DOMContentLoaded", () => {
 			});
 		}
 	});
-
-	initAlertTable(); // run once on initial page load
-	// initSidebarLinks(); // handle dynamic view loading
-
-	// Initialize the default loaded module (user)
-	if (typeof modules !== "undefined" && modules.user?.init) {
-		modules.user.init();
-	}
 });
