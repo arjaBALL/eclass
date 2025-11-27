@@ -51,19 +51,27 @@ class Api extends CI_Controller
         echo json_encode($departments);
     }
 
-      public function get_teacher_subjects()
+    public function get_teacher_subjects()
     {
         header('Content-Type: application/json');
-         $user_id = $this->input->get('user_id');
+        $user_id = $this->input->get('user_id');
         $teacherSubject = $this->Subject_assignment_model->get_all_teacher_subjects($user_id);
         echo json_encode($teacherSubject);
     }
 
-      public function get_subject_schedules()
+    public function get_subject_schedules()
     {
         header('Content-Type: application/json');
         $user_id = $this->input->get('user_id');
         $teacherSubject = $this->Schedules_model->get_all_subjects_schedules($user_id);
+        echo json_encode($teacherSubject);
+    }
+
+    public function get_schedule_students()
+    {
+        header('Content-Type: application/json');
+        $user_id = $this->input->get('user_id');
+        $teacherSubject = $this->Schedules_model->get_all_schedule_students($user_id);
         echo json_encode($teacherSubject);
     }
 
@@ -342,13 +350,13 @@ class Api extends CI_Controller
 
         // Duplicate validation
         $exists = $this->Schedules_model->validate_data(
-            $dailySchedule, 
-            $roomSelect, 
-            $classCode,  
-            $startTime, 
-            $endTime, 
-            $yearSelect, 
-            $sectionSelect, 
+            $dailySchedule,
+            $roomSelect,
+            $classCode,
+            $startTime,
+            $endTime,
+            $yearSelect,
+            $sectionSelect,
             $subjectTeacherId
         );
 
@@ -374,17 +382,17 @@ class Api extends CI_Controller
             echo json_encode(['status' => 'error', 'message' => 'Failed to insert schedule']);
             return;
         }
-    $assigned_count = $this->Schedules_model->auto_assign_students(
-        $sectionSelect,
-        $yearSelect,
-        $schedule_id
-    );
+        $assigned_count = $this->Schedules_model->auto_assign_students(
+            $sectionSelect,
+            $yearSelect,
+            $schedule_id
+        );
 
-    echo json_encode([
-        'status' => 'success',
-        'message' => 'Schedule created and ' . $assigned_count . ' students assigned.',
-        'schedule_id' => $schedule_id
-    ]);
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'Schedule created and ' . $assigned_count . ' students assigned.',
+            'schedule_id' => $schedule_id
+        ]);
 
     }
 

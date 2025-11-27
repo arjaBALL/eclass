@@ -107,6 +107,24 @@ $(document).ready(function () {
 		});
 	});
 
+	$(document).on("click", ".viewStudentsbtn", function () {
+		const selectedUserId = $(this).data("user-id");
+		$.ajax({
+			url: BASE_URL + "index.php/Api/get_schedule_students",
+			method: "GET",
+			data: { user_id: selectedUserId },
+			dataType: "json",
+			success: function (reports) {
+				renderViewStudentTable(reports);
+			},
+			error: function () {
+				$("#viewStudentData").html(
+					'<tr><td colspan="10" class="text-center">Failed to load data</td></tr>'
+				);
+			},
+		});
+	});
+
 	function renderTeachersTable(teachers) {
 		const filterDepartmentSelect = $("#filterDepartmentSelect").val();
 
@@ -180,17 +198,19 @@ $(document).ready(function () {
 	        <td>${schedules.time_start || ""} | ${schedules.time_end || ""}</td>
             <td>${schedules.room || ""}</td>
 	        <td>
-	            <button class="btn btn-sm btn-success editSchedules" data-id="${
-								schedules.id
-							}" title="Edit">
-	                <i class="fa-solid fa-user-plus"></i>
-	            </button>
-                <button class="btn btn-sm btn-primary addSchedulebtn" 
-                data-user-id="${subjects.id}" 
-                title="Add schedule"
-                data-bs-toggle="modal"
-                data-bs-target="#subjectScheduleModal">
-               <i class="fa-solid fa-users-viewfinder"></i>
+			 	<button class="btn btn-sm btn-success addStudentbtn" 
+					data-user-id="${schedules.id}" 
+					title="Add schedule"
+					data-bs-toggle="modal"
+					data-bs-target="#scheduleModal">
+				<i class="fa-solid fa-user-plus"></i>
+                </button>
+	            <button class="btn btn-sm btn-primary viewStudentsbtn" 
+					data-user-id="${schedules.id}" 
+					title="Add schedule"
+					data-bs-toggle="modal"
+					data-bs-target="#viewStudentModal">
+				<i class="fa-solid fa-users-viewfinder"></i>
                 </button>
 	            <button class="btn btn-sm btn-danger deleteSchedules" data-id="${
 								schedules.id
@@ -260,12 +280,65 @@ $(document).ready(function () {
 		// setupTable("users", "searchUsers", [10, 25, 50, 100], 10);
 	}
 
+	function renderViewStudentTable(students) {
+		let html = "";
+
+		if (students.length > 0) {
+			$.each(students, function (i, students) {
+				const rowClass =
+					students.status && students.status.trim().toLowerCase() === "active"
+						? "highlight-row"
+						: "";
+
+				html += `
+                <tr class="${rowClass}">
+                    <td>${students.fullname || ""}</td>
+                    <td>${students.section || ""}</td>
+                    <td>${students.status || ""}</td>
+                    <td>
+                        <button class="btn btn-sm btn-success addStudentbtn" 
+                            data-user-id="${students.id}" 
+                            title="Add schedule"
+                            data-bs-toggle="modal"
+                            data-bs-target="#scheduleModal">
+                            <i class="fa-solid fa-user-plus"></i>
+                        </button>
+
+                        <button class="btn btn-sm btn-primary viewStudentsbtn" 
+                            data-user-id="${students.id}" 
+                            title="View Students"
+                            data-bs-toggle="modal"
+                            data-bs-target="#viewStudentModal">
+                            <i class="fa-solid fa-users-viewfinder"></i>
+                        </button>
+
+                        <button class="btn btn-sm btn-danger deleteSchedules" 
+                            data-id="${students.id}" 
+                            title="Delete">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+			});
+		} else {
+			html =
+				'<tr><td colspan="7" class="text-center">No schedules found</td></tr>';
+		}
+
+		$("#viewStudentData").html(html);
+	}
+
 	$(document).on("click", ".addSchedulebtn", function () {
 		let teacherId = $(this).data("user-id");
 
-		// set the hidden input value
-		console.log(teacherId);
 		$("#subjectTeacherId").val(teacherId);
+	});
+
+	$(document).on("click", ".addStudentbtn", function () {
+		let teacherId = $(this).data("user-id");
+		console.log(teacherId);
+		$("#subjectStudentId").val(teacherId);
 	});
 
 	$("#filterDepartmentSelect").on("change", function () {
