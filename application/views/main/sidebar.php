@@ -44,8 +44,8 @@
                 <span>Assessments</span>
             </a>
             <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="<?= site_url('daily_report') ?>">Record Score</a></li>
-                <li><a class="dropdown-item" href="#">Class Record</a></li>
+                <li><a class="dropdown-item" href="<?= site_url('record_score') ?>">Record Score</a></li>
+                <li><a class="dropdown-item" href="<?= site_url('daily_report') ?>">Class Record</a></li>
             </ul>
         </div>
 

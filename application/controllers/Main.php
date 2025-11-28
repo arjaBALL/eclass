@@ -108,4 +108,17 @@ class Main extends CI_Controller
         );
         $this->load->view('main/main', $data);
     }
+
+    public function record_score()
+    {
+        $data = array_merge(
+            // $this->get_session_data(),
+            $this->data_loader->dropdowns(),
+            [
+                'content' => 'record_score',
+                'scripts' => ['record_scores']
+            ],
+        );
+        $this->load->view('main/main', $data);
+    }
 }

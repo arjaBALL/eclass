@@ -473,6 +473,33 @@ $(document).ready(function () {
 		});
 	});
 
+	function dropStudent(studentScheduleId, button) {
+		$.ajax({
+			url: BASE_URL + "index.php/Api/drop_student",
+			type: "POST",
+			dataType: "json",
+			data: {
+				student_schedule_id: studentScheduleId,
+			},
+			success: function (response) {
+				if (response.status === "success") {
+					Swal.fire("Success", response.message, "success").then(() => {
+						// Remove the row from the table
+						button.closest("tr").fadeOut(300, function () {
+							$(this).remove();
+						});
+					});
+				} else {
+					Swal.fire("Error", response.message, "error");
+				}
+			},
+			error: function (xhr) {
+				Swal.fire("Error", "Failed to drop student", "error");
+				console.error(xhr);
+			},
+		});
+	}
+
 	$(document).on("click", ".inlistbtn", function () {
 		const studentScheduleId = $(this).data("id");
 		const button = $(this);

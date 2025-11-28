@@ -1,20 +1,20 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Subject_assignment_model extends CI_Model
+class Record_score_model extends CI_Model
 {
-    public function validate_data($subjectAssignmentSelect, $teacherSelect, $semesterSelect)
+    public function validate_data($recordScoreBtn, $criteria, $weight)
     {
-        $this->db->where('subject_id', $subjectAssignmentSelect);
-        $this->db->where('teacher_id', $teacherSelect);
-        $this->db->where('semester_id', $semesterSelect);
-        $query = $this->db->get('tbl_subject_assignments');
+        $this->db->where('schedule_id', $recordScoreBtn);
+        $this->db->where('criteria', $criteria);
+        $this->db->where('weight', $weight);
+        $query = $this->db->get('tbl_subject_criteria');
 
         return $query->num_rows() > 0; // true if duplicate exists
     }
-    public function insert_subject_assignments($data)
+    public function insert_score_record($data)
     {
-        $this->db->insert('tbl_subject_assignments', $data);
+        $this->db->insert('tbl_subject_criteria', $data);
         return $this->db->insert_id();
     }
 

@@ -1,6 +1,4 @@
 <?php
-defined('BASEPATH') OR exit('No direct script access allowed');
-
 class Data_loader
 {
     protected $CI;
@@ -8,17 +6,25 @@ class Data_loader
     public function __construct()
     {
         $this->CI =& get_instance();
+
+        // Load needed models
         $this->CI->load->model([
             'Utilities_model',
+            'Subject_assignment_model'  // if needed
         ]);
+
+        // 💡 Load session here
+        $this->CI->load->library('session');
     }
 
     public function dropdowns()
     {
-        // $user_id = $this->CI->session->userdata('user_id');
+        // SAFE TO USE SESSION NOW
+        $user_id = $this->CI->session->userdata('user_id');
+
         return [
             'year_levels' => $this->CI->Utilities_model->get_all_year_levels(),
-            'subjects' => $this->CI->Utilities_model->get_all_subjects(),
+            'subjects' => $this->CI->Utilities_model->get_all_subjects($user_id),
             'sections' => $this->CI->Utilities_model->get_all_sections(),
             'student_statuses' => $this->CI->Utilities_model->get_all_student_status(),
             'teacher_status' => $this->CI->Utilities_model->get_all_teacher_status(),
@@ -29,7 +35,10 @@ class Data_loader
             'roles' => $this->CI->Utilities_model->get_all_roles(),
             'teachers' => $this->CI->Utilities_model->get_all_teachers(),
             'semesters' => $this->CI->Utilities_model->get_all_semesters(),
-            'rooms' => $this->CI->Utilities_model->get_all_rooms()
+            'rooms' => $this->CI->Utilities_model->get_all_rooms(),
+
+            // Optional: logged-in teacher_id
+            'logged_in_teacher_id' => $user_id
         ];
     }
 }

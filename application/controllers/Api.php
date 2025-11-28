@@ -7,6 +7,7 @@ class Api extends CI_Controller
     {
         parent::__construct();
         $this->load->database();
+        $this->load->library('session');
         $this->load->model('Students_model');
         $this->load->model('Subjects_model');
         $this->load->model('Teacher_model');
@@ -14,6 +15,8 @@ class Api extends CI_Controller
         $this->load->model('Department_model');
         $this->load->model('Subject_assignment_model');
         $this->load->model('Schedules_model');
+        $this->load->model('Record_score_model');
+        $this->load->model('Criteria_model');
     }
 
     public function get_subjects()
@@ -54,8 +57,14 @@ class Api extends CI_Controller
     public function get_teacher_subjects()
     {
         header('Content-Type: application/json');
-        $user_id = $this->input->get('user_id');
+        $user_id = $this->session->userdata('user_id');
+
+        if (!$user_id) {
+            echo json_encode(['error' => 'Not logged in']);
+            return;
+        }
         $teacherSubject = $this->Subject_assignment_model->get_all_teacher_subjects($user_id);
+
         echo json_encode($teacherSubject);
     }
 
@@ -74,6 +83,35 @@ class Api extends CI_Controller
         $teacherSubject = $this->Schedules_model->get_all_schedule_students($user_id);
         echo json_encode($teacherSubject);
     }
+
+    public function getCriteria()
+    {
+        $schedule_id = $this->input->get('schedule_id');
+
+        if (!$schedule_id) {
+            echo json_encode([]);
+            return;
+        }
+
+        $criteria = $this->Criteria_model->get_criteria_by_schedule($schedule_id);
+        echo json_encode($criteria);
+    }
+
+    public function getStudents()
+    {
+        $schedule_id = $this->input->get("schedule_id");
+        $criteria_id = $this->input->get("criteria_id");
+
+        if (!$schedule_id || !$criteria_id) {
+            echo json_encode([]);
+            return;
+        }
+
+        $this->load->model("Criteria_model");
+        $students = $this->Criteria_model->get_students_by_schedule_criteria($schedule_id, $criteria_id);
+        echo json_encode($students);
+    }
+
 
     public function addStudent()
     {
@@ -165,6 +203,42 @@ class Api extends CI_Controller
             echo json_encode(['status' => 'success']);
         } else {
             echo json_encode(['status' => 'error', 'message' => 'Failed to insert subject']);
+        }
+    }
+    public function addCriteria()
+    {
+        $recordScoreBtn = $this->input->post('recordScoreBtn');
+        $criteria = $this->input->post('criteria');
+        $weight = $this->input->post('weight');
+
+        if (
+            empty($recordScoreBtn) ||
+            empty($criteria) ||
+            empty($weight)
+        ) {
+            echo json_encode(['status' => 'error', 'message' => 'All fields are required']);
+            return;
+        }
+
+        $exists = $this->Record_score_model->validate_data($recordScoreBtn, $criteria, $weight);
+
+        if ($exists) {
+            echo json_encode(['status' => 'error', 'message' => 'Subject already exists']);
+            return;
+        }
+
+        $data = [
+            'schedule_id' => $recordScoreBtn,
+            'criteria' => $criteria,
+            'weight' => $weight
+        ];
+
+        $insertData = $this->Record_score_model->insert_score_record($data);
+
+        if ($insertData) {
+            echo json_encode(['status' => 'success']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Failed to insert recordScoreBtn']);
         }
     }
 
@@ -381,12 +455,12 @@ class Api extends CI_Controller
 
         if ($teacher_conflict) {
             echo json_encode([
-                'status' => 'error', 
-                'message' => 'Teacher already has a schedule on ' . $dailySchedule . ' from ' . 
-                            date('H:i', strtotime($teacher_conflict->time_start)) . ' to ' . 
-                            date('H:i', strtotime($teacher_conflict->time_end)) . 
-                            ' (Room: ' . $this->get_room_name($teacher_conflict->room_id) . 
-                            '). A teacher cannot have overlapping schedules.'
+                'status' => 'error',
+                'message' => 'Teacher already has a schedule on ' . $dailySchedule . ' from ' .
+                    date('H:i', strtotime($teacher_conflict->time_start)) . ' to ' .
+                    date('H:i', strtotime($teacher_conflict->time_end)) .
+                    ' (Room: ' . $this->get_room_name($teacher_conflict->room_id) .
+                    '). A teacher cannot have overlapping schedules.'
             ]);
             return;
         }
@@ -401,10 +475,10 @@ class Api extends CI_Controller
 
         if ($room_conflict) {
             echo json_encode([
-                'status' => 'error', 
-                'message' => 'Room is already occupied on ' . $dailySchedule . ' from ' . 
-                            date('H:i', strtotime($room_conflict->time_start)) . ' to ' . 
-                            date('H:i', strtotime($room_conflict->time_end))
+                'status' => 'error',
+                'message' => 'Room is already occupied on ' . $dailySchedule . ' from ' .
+                    date('H:i', strtotime($room_conflict->time_start)) . ' to ' .
+                    date('H:i', strtotime($room_conflict->time_end))
             ]);
             return;
         }
@@ -448,8 +522,8 @@ class Api extends CI_Controller
             $message = 'Schedule created successfully. All ' . $assigned_count . ' students assigned.';
         } else {
             $skipped = $total_students - $assigned_count;
-            $message = 'Schedule created successfully. ' . $assigned_count . ' of ' . $total_students . 
-                    ' students assigned. (' . $skipped . ' students have conflicting schedules)';
+            $message = 'Schedule created successfully. ' . $assigned_count . ' of ' . $total_students .
+                ' students assigned. (' . $skipped . ' students have conflicting schedules)';
         }
 
         echo json_encode([
@@ -519,10 +593,10 @@ class Api extends CI_Controller
         if ($conflict) {
             echo json_encode([
                 'status' => 'error',
-                'message' => 'Student already has a schedule on ' . $conflict->days_schedule . 
-                            ' from ' . date('H:i', strtotime($conflict->time_start)) . ' to ' . 
-                            date('H:i', strtotime($conflict->time_end)) . 
-                            ' (Room: ' . $conflict->room . '). Cannot add to overlapping time slot.'
+                'message' => 'Student already has a schedule on ' . $conflict->days_schedule .
+                    ' from ' . date('H:i', strtotime($conflict->time_start)) . ' to ' .
+                    date('H:i', strtotime($conflict->time_end)) .
+                    ' (Room: ' . $conflict->room . '). Cannot add to overlapping time slot.'
             ]);
             return;
         }
@@ -602,59 +676,59 @@ class Api extends CI_Controller
         }
     }
 
-public function inlist_student()
-{
-    if (!$this->input->is_ajax_request()) {
-        echo json_encode(['status' => 'error', 'message' => 'Invalid request']);
-        return;
+    public function inlist_student()
+    {
+        if (!$this->input->is_ajax_request()) {
+            echo json_encode(['status' => 'error', 'message' => 'Invalid request']);
+            return;
+        }
+
+        $student_schedule_id = $this->input->post('student_schedule_id');
+
+        if (empty($student_schedule_id)) {
+            echo json_encode(['status' => 'error', 'message' => 'Student schedule ID is required']);
+            return;
+        }
+
+        // Get the student schedule record
+        $student_schedule = $this->db
+            ->where('id', $student_schedule_id)
+            ->get('tbl_student_schedules')
+            ->row();
+
+        if (!$student_schedule) {
+            echo json_encode(['status' => 'error', 'message' => 'Student schedule not found']);
+            return;
+        }
+
+        // Get the Regular status ID from tbl_student_status (status = 'Regular')
+        $regular_status = $this->db
+            ->where('status', 'Regular')
+            ->get('tbl_student_status')
+            ->row();
+
+        if (!$regular_status) {
+            echo json_encode(['status' => 'error', 'message' => 'Regular status not found in system']);
+            return;
+        }
+
+        // Update the student status in tbl_student_schedules back to 'Regular'
+        $update_data = [
+            'status_id' => $regular_status->id
+        ];
+
+        $updated = $this->db
+            ->where('id', $student_schedule_id)
+            ->update('tbl_student_schedules', $update_data);
+
+        if ($updated) {
+            echo json_encode([
+                'status' => 'success',
+                'message' => 'Student has been restored to the schedule'
+            ]);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Failed to restore student']);
+        }
     }
-
-    $student_schedule_id = $this->input->post('student_schedule_id');
-
-    if (empty($student_schedule_id)) {
-        echo json_encode(['status' => 'error', 'message' => 'Student schedule ID is required']);
-        return;
-    }
-
-    // Get the student schedule record
-    $student_schedule = $this->db
-        ->where('id', $student_schedule_id)
-        ->get('tbl_student_schedules')
-        ->row();
-
-    if (!$student_schedule) {
-        echo json_encode(['status' => 'error', 'message' => 'Student schedule not found']);
-        return;
-    }
-
-    // Get the Regular status ID from tbl_student_status (status = 'Regular')
-    $regular_status = $this->db
-        ->where('status', 'Regular')
-        ->get('tbl_student_status')
-        ->row();
-
-    if (!$regular_status) {
-        echo json_encode(['status' => 'error', 'message' => 'Regular status not found in system']);
-        return;
-    }
-
-    // Update the student status in tbl_student_schedules back to 'Regular'
-    $update_data = [
-        'status_id' => $regular_status->id
-    ];
-
-    $updated = $this->db
-        ->where('id', $student_schedule_id)
-        ->update('tbl_student_schedules', $update_data);
-
-    if ($updated) {
-        echo json_encode([
-            'status' => 'success',
-            'message' => 'Student has been restored to the schedule'
-        ]);
-    } else {
-        echo json_encode(['status' => 'error', 'message' => 'Failed to restore student']);
-    }
-}
 
 }
