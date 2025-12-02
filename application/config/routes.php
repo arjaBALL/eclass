@@ -61,3 +61,4 @@ $route['schedules'] = 'main/schedule';
 $route['subject_assignment'] = 'main/subject_assignment';
 $route['department'] = 'main/department';
 $route['record_score'] = 'main/record_score';
+$route['class_record'] = 'main/class_record';

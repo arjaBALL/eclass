@@ -1,49 +1,81 @@
-<main>
-  <div class=" mt-3 border">
+<script>
+const GRADING_PERIODS = <?= json_encode($grading_periods) ?>;
+</script>
+
+<body>
     <div class="row">
-      <div class="col d-flex justify-content-end">
-        <!-- Button to trigger modal -->
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#studentModal">
-          New Student
-        </button>
-      </div>
+        <div class="mb-3 col-2">
+            <label for="filterSubjectSelect" class="form-label mb-0">
+                <small>Subject</small>
+            </label>
+            <select id="filterSubjectSelect" name="filterSubjectSelect" class="form-select form-select-sm">
+                <option value="">Choose:</option>
+                <?php foreach ($subjects as $subject): ?>
+                <option value="<?= $subject['id'] ?>"><?= $subject['subject_code'] ?>
+                </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="col">
+            <div class="col-3">
+                <button id="resetFiltersBtn" class="btn border btn-sm mt-4"><small><i
+                            class="fa-solid fa-arrow-rotate-right"></i>
+                        Reset Filters</small></button>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <!-- Modal -->
-  <div class="modal fade" id="studentModal" tabindex="-1" aria-labelledby="studentModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="studentModalLabel">Modal Title</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="row">
+        <div class="col-md-4">
+            <table id="vessels" class="table table-hover table-bordered text-center table-responsive">
+                <thead>
+                    <tr>
+                        <th scope="col">Subjects</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="subjectsData">
+                </tbody>
+            </table>
         </div>
-        <div class="modal-body">
-          This is the content of the modal.
+        <div class="col-md-8">
+            <table id="subjects" class="table table-hover table-bordered text-center table-responsive">
+                <thead>
+                    <tr>
+                        <th scope="col">Class Code</th>
+                        <th scope="col">Day Schedule</th>
+                        <th>Time Start - End</th>
+                        <th>Section</th>
+                        <th>Year</th>
+                        <th>Room</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="subjectSchedulesData">
+                </tbody>
+            </table>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-          <button type="button" class="btn btn-primary">Save changes</button>
-        </div>
-      </div>
     </div>
-  </div>
 
-  <table id="vessels" class="table table-hover table-bordered text-center table-responsive">
-        <thead>
-            <tr>
-                <th scope="col"></th>
-                <th scope="col">Vessel Name</th>
-                <th scope="col">MMSI No.</th>
-                <th scope="col">Vessels Owner Name</th>
-                <th scope="col">Owner Address</th>
-                <th scope="col">Callsign</th>
-                <th scope="col">Registration Number</th>
-                <th scope="col">Vessel Status</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody id="vesselData">  
-        </tbody>
-    </table>
-</main>
+    <div class="row">
+        <div class="container"></div>
+        <div class="">
+            <table id="subjects" class="table table-hover table-bordered text-center table-responsive">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th scope="col">Name</th>
+                        <th scope="col">Midterm Grade</th>
+                        <th>Pre-final Grade</th>
+                        <th>Final Grade</th>
+                        <th>Remarks</th>
+                        <th>Rank</th>
+                    </tr>
+                </thead>
+                <tbody id="subjectSchedulesData">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</body>

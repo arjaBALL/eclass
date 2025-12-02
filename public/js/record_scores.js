@@ -14,6 +14,19 @@ $(document).ready(function () {
 	let currentScheduleId = null;
 	let currentGradePeriod = null;
 
+	// Hide criteria form and list initially
+	if ($("#criteriaForm").length > 0) {
+		$("#criteriaForm")
+			.closest('.border, .card, .container, [class*="col"]')
+			.hide();
+	}
+	$("#criteriaListContainer, #criteriaList")
+		.closest('.border, .card, .container, [class*="col"]')
+		.hide();
+
+	// Hide score table initially
+	$(".col-9.border").hide();
+
 	// ========== DATA LOADING ==========
 
 	function loadSubjects() {
@@ -100,18 +113,84 @@ $(document).ready(function () {
                     `;
 					});
 				} else {
+					// Reset criteriaColumns to empty array when no criteria found
+					criteriaColumns = [];
 					html = '<div class="text-center text-muted">No criteria found</div>';
 				}
 
 				$("#criteriaList").html(html);
+
+				// Update weight display and check if can add more criteria
+				updateWeightDisplay();
 			},
 			error: function (xhr, status, error) {
 				console.error("Failed to fetch criteria:", error);
+				criteriaColumns = []; // Reset on error too
 				$("#criteriaList").html(
 					'<div class="text-center text-danger">Error loading criteria</div>'
 				);
 			},
 		});
+	}
+
+	// New function to calculate total weight for current grading period
+	function calculateTotalWeight() {
+		let totalWeight = 0;
+		criteriaColumns.forEach((c) => {
+			totalWeight += parseFloat(c.weight) || 0;
+		});
+		return totalWeight;
+	}
+
+	// New function to update weight display and disable form if needed
+	function updateWeightDisplay() {
+		const totalWeight = calculateTotalWeight();
+		const remainingWeight = 100 - totalWeight;
+
+		// Update or create weight display
+		let weightDisplay = $("#weightDisplay");
+		if (weightDisplay.length === 0) {
+			$("#criteriaList").before(`
+				<div id="weightDisplay" class="alert mb-2 py-1 px-2" role="alert" style="font-size: 0.75rem;">
+					<span><strong>Total:</strong> <span id="totalWeightValue">0</span>%</span>
+					<span class="mx-2">|</span>
+					<span><strong>Remaining:</strong> <span id="remainingWeightValue">100</span>%</span>
+				</div>
+			`);
+			weightDisplay = $("#weightDisplay");
+		}
+
+		$("#totalWeightValue").text(totalWeight.toFixed(2));
+		$("#remainingWeightValue").text(remainingWeight.toFixed(2));
+
+		// Change alert color based on weight
+		weightDisplay.removeClass(
+			"alert-info alert-warning alert-danger alert-success"
+		);
+		if (totalWeight >= 100) {
+			weightDisplay.addClass("alert-danger");
+			// Disable the criteria form
+			$("#criteriaForm :input").prop("disabled", true);
+			$("#criteriaForm button[type='submit']").prop("disabled", true);
+
+			// Show message
+			if ($("#weightLimitMessage").length === 0) {
+				$("#criteriaForm").before(`
+					<div id="weightLimitMessage" class="alert alert-warning mb-2 py-1 px-2" style="font-size: 0.75rem;">
+						<i class="fa-solid fa-exclamation-triangle"></i> 
+						Cannot add more criteria. Total weight has reached 100% for ${currentGradePeriod}.
+					</div>
+				`);
+			}
+		} else {
+			weightDisplay.addClass("alert-info");
+			// Enable the criteria form - make sure form exists first
+			if ($("#criteriaForm").length > 0) {
+				$("#criteriaForm :input").prop("disabled", false);
+				$("#criteriaForm button[type='submit']").prop("disabled", false);
+			}
+			$("#weightLimitMessage").remove();
+		}
 	}
 
 	$(document).on("click", ".manageBtn", function () {
@@ -126,6 +205,9 @@ $(document).ready(function () {
 
 		window.selectedCriteriaWeight = selectedCriteria.weight;
 		window.selectedCriteriaName = selectedCriteria.name;
+
+		// Show the score table section
+		$(".col-9.border").show();
 
 		$.ajax({
 			url: BASE_URL + "index.php/Api/getStudentScore",
@@ -224,7 +306,7 @@ $(document).ready(function () {
 						name="gradingPeriodSelect"  
 						class="form-select form-select-sm recordScoreBtn"
 						data-id="${schedules.id}">
-						<option value="">Choose:</option>
+						
 						${gradingOptions}
 					</select>
 				</td>
@@ -331,6 +413,22 @@ $(document).ready(function () {
 	$("#criteriaForm").submit(function (event) {
 		event.preventDefault();
 
+		// Check if total weight would exceed 100%
+		const newWeight = parseFloat($("#criteriaWeight").val()) || 0;
+		const currentTotal = calculateTotalWeight();
+
+		if (currentTotal + newWeight > 100) {
+			Swal.fire({
+				icon: "error",
+				title: "Weight Limit Exceeded!",
+				text: `Cannot add criteria. Current total weight is ${currentTotal.toFixed(
+					2
+				)}%. Adding ${newWeight}% would exceed 100%.`,
+				confirmButtonText: "OK",
+			});
+			return;
+		}
+
 		const formData =
 			$(this).serialize() + "&gradingPeriodSelect=" + currentGradePeriod;
 
@@ -378,6 +476,19 @@ $(document).ready(function () {
 		const gradingPeriod = $(this).val();
 
 		if (!scheduleId || !gradingPeriod) {
+			// Hide everything when no grading period is selected
+			if ($("#criteriaForm").length > 0) {
+				$("#criteriaForm")
+					.closest('.border, .card, .container, [class*="col"]')
+					.hide();
+			}
+			$("#criteriaListContainer, #criteriaList")
+				.closest('.border, .card, .container, [class*="col"]')
+				.hide();
+			$(".col-9.border").hide();
+			$("#weightDisplay").remove();
+			$("#weightLimitMessage").remove();
+
 			$("#criteriaList").html(
 				'<div class="text-muted text-center">Please select a grading period</div>'
 			);
@@ -390,7 +501,16 @@ $(document).ready(function () {
 		$("#recordScoreBtn").val(scheduleId);
 		$("#gradingPeriodSelect").val(gradingPeriod);
 
+		// Show criteria form and list
+		if ($("#criteriaForm").length > 0) {
+			$("#criteriaForm")
+				.closest('.border, .card, .container, [class*="col"]')
+				.show();
+		}
 		$("#criteriaListContainer").show();
+		$("#criteriaList")
+			.closest('.border, .card, .container, [class*="col"]')
+			.show();
 
 		fetchCriteria(currentScheduleId, currentGradePeriod);
 	});

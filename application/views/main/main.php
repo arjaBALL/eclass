@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title><?= isset($title) ? $title : 'RFIC | VMS Operators Reporting System' ?></title>
+    <title><?= isset($title) ? $title : 'EclassRecord | ' ?></title>
     <link rel="icon" type="image/png" href="<?= base_url('public/logo.png') ?>">
 
 

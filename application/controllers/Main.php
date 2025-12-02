@@ -121,4 +121,17 @@ class Main extends CI_Controller
         );
         $this->load->view('main/main', $data);
     }
+
+    public function class_record()
+    {
+        $data = array_merge(
+            // $this->get_session_data(),
+            $this->data_loader->dropdowns(),
+            [
+                'content' => 'class_record',
+                'scripts' => ['class_records']
+            ],
+        );
+        $this->load->view('main/main', $data);
+    }
 }
