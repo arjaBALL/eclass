@@ -7,7 +7,7 @@ class Record_score_model extends CI_Model
     {
         $this->db->where('schedule_id', $recordScoreBtn);
         $this->db->where('criteria', $criteria);
-        $this->db->where('grading_period', $grading_period);
+        $this->db->where('grading_id', $grading_period);
         $this->db->where('weight', $weight);
         $query = $this->db->get('tbl_subject_criteria');
 

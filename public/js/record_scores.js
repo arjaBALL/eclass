@@ -181,7 +181,6 @@ $(document).ready(function () {
 
 		$("#subjectsData").html(html);
 	}
-
 	function renderSubjectSchedulesTable(schedules) {
 		const filterDepartmentSelect = $("#filterDepartmentSelect").val();
 		const filterStatusSelect = $("#filterStatusSelect").val();
@@ -205,22 +204,32 @@ $(document).ready(function () {
 						? "highlight-row"
 						: "";
 
+				let gradingOptions = `<option value="">Choose:</option>`;
+
+				GRADING_PERIODS.forEach((grp) => {
+					gradingOptions += `<option value="${grp.id}">${grp.grading_period}</option>`;
+				});
+
 				html += `
-	    	<tr class="${rowClass}">
-	        <td>${schedules.class_code || ""}</td>
-	        <td>${schedules.days_schedule || ""}</td>
-	        <td>${schedules.time_start || ""} | ${schedules.time_end || ""}</td>
-			<td>${schedules.section || ""}</td>
-			<td>${schedules.year_level || ""}</td>
-            <td>${schedules.room || ""}</td>
-	        <td>
-	            <button class="btn btn-sm btn-warning recordScoreBtn" data-id="${
-								schedules.id
-							}" title="Record Score">
-	               <i class="fa-solid fa-file-pen"></i> Record Score
-	            </button>
-	        </td>
-	    </tr>`;
+			<tr class="${rowClass}">
+				<td>${schedules.class_code || ""}</td>
+				<td>${schedules.days_schedule || ""}</td>
+				<td>${schedules.time_start || ""} | ${schedules.time_end || ""}</td>
+				<td>${schedules.section || ""}</td>
+				<td>${schedules.year_level || ""}</td>
+				<td>${schedules.room || ""}</td>
+				<td>
+					<select
+						name="gradingPeriodSelect"  
+						class="form-select form-select-sm recordScoreBtn"
+						data-id="${schedules.id}">
+						
+						<option value="">Choose:</option>
+						${gradingOptions}
+					</select>
+				</td>
+
+			</tr>`;
 			});
 		} else {
 			html =
@@ -235,7 +244,11 @@ $(document).ready(function () {
 
 		let header = "<th>Students</th>";
 		header += `<th class="score-column">${selectedCriteria.name}</th>`;
-		header += `<th class="summary-column">Total Items</th><th class="summary-column average">Average %</th><th class="summary-column weighted">Weighted (%)</th>`;
+		header += `<th class="summary-column">Total Score</th>`;
+		header += `<th class="summary-column average">Average</th>`;
+		header += `<th class="summary-column weighted">Weighted Grade (Base on ${(
+			selectedCriteria.weight / 100
+		).toFixed(2)} criteria weight)</th>`;
 		$("#scoresTableHeader").html(header);
 
 		let itemsRow = `<tr class="itemsRow"><td>Items</td>`;
@@ -245,7 +258,11 @@ $(document).ready(function () {
 							selectedCriteria.items || 0
 						}" placeholder="Items">
         </td>`;
-		itemsRow += `<td class="summary-column"></td><td class="summary-column"></td><td class="summary-column"></td></tr>`;
+		itemsRow += `<td class="summary-column totalItemsHeader">${
+			selectedCriteria.items || 0
+		}</td>`;
+		itemsRow += `<td class="summary-column itemsAverage">1.0</td>`;
+		itemsRow += `<td class="summary-column itemsWeighted">0.00</td></tr>`;
 		$("#subjectScheduleData").html(itemsRow);
 
 		students.forEach((s) => {
@@ -264,7 +281,7 @@ $(document).ready(function () {
             </td>`;
 
 			row += `
-            <td class="summary-column totalItems text-center">0</td>
+            <td class="summary-column totalScore text-center">0</td>
             <td class="summary-column average text-center">0.00</td>
             <td class="summary-column weighted text-center">0.00</td>
         </tr>`;
@@ -274,7 +291,6 @@ $(document).ready(function () {
 
 		calculateAverage();
 	}
-
 	$(document).on("input", ".studentScoreEarned, .colItems", function () {
 		calculateAverage();
 	});
@@ -285,7 +301,7 @@ $(document).ready(function () {
 		event.preventDefault();
 
 		const formData =
-			$(this).serialize() + "&grade_period=" + currentGradePeriod;
+			$(this).serialize() + "&gradingPeriodSelect=" + currentGradePeriod;
 
 		$.ajax({
 			url: BASE_URL + "index.php/Api/addCriteria",
@@ -326,11 +342,26 @@ $(document).ready(function () {
 
 	// ========== EVENT HANDLERS ==========
 
-	$(document).on("click", ".recordScoreBtn", function () {
-		let scheduleId = $(this).data("id");
-		$("#criteriaListContainer").show();
-		fetchCriteria(scheduleId);
+	$(document).on("change", ".recordScoreBtn", function () {
+		const scheduleId = $(this).data("id");
+		const gradingPeriod = $(this).val();
+
+		if (!scheduleId || !gradingPeriod) {
+			$("#criteriaList").html(
+				'<div class="text-muted text-center">Please select a grading period</div>'
+			);
+			return;
+		}
+
+		currentScheduleId = scheduleId;
+		currentGradePeriod = gradingPeriod;
+
 		$("#recordScoreBtn").val(scheduleId);
+		$("#gradingPeriodSelect").val(gradingPeriod);
+
+		$("#criteriaListContainer").show();
+
+		fetchCriteria(currentScheduleId, currentGradePeriod);
 	});
 
 	$(document).on("click", "#addScoreColumn", function () {
@@ -483,42 +514,50 @@ $(document).ready(function () {
 
 	function calculateAverage() {
 		const selectedWeight = window.selectedCriteriaWeight || 0;
-		const selectedCriteriaName = window.selectedCriteriaName || "Unknown";
+		const weightDecimal = selectedWeight / 100;
+
+		let totalItems = 0;
+		$(".itemsRow input.colItems").each(function () {
+			totalItems += parseFloat($(this).val()) || 0;
+		});
+
+		$(".itemsRow .totalItemsHeader").text(totalItems);
+
+		$(".itemsRow .itemsAverage").text("1.0");
+
+		const itemsWeighted = weightDecimal;
+		$(".itemsRow .itemsWeighted").text(itemsWeighted.toFixed(2));
 
 		$("#subjectScheduleData tr")
 			.not(".itemsRow")
 			.each(function () {
-				let totalItems = 0;
 				let totalEarned = 0;
 
-				const items =
-					parseFloat($(`.itemsRow input.colItems[data-col-index='0']`).val()) ||
-					0;
-				const earned =
-					parseFloat(
-						$(this).find(`input.studentScoreEarned[data-col-index='0']`).val()
-					) || 0;
+				$(this)
+					.find("input.studentScoreEarned")
+					.each(function () {
+						totalEarned += parseFloat($(this).val()) || 0;
+					});
 
-				const weightDecimal = selectedWeight / 100;
+				$(this).find("td.totalScore").text(totalEarned);
 
-				if (items > 0) {
-					totalItems = items;
-					totalEarned = earned;
-				}
-
-				$(this).find("td.totalItems").text(totalItems);
-
-				let averagePercent =
+				const averagePercent =
 					totalItems > 0 ? (totalEarned / totalItems) * 100 : 0;
-
 				let averageScale = 5 - (averagePercent / 100) * 4;
 				averageScale = Math.min(Math.max(averageScale, 1), 5).toFixed(2);
-
 				$(this).find("td.average").text(averageScale);
 
-				let weightedValue = averageScale * weightDecimal;
-
+				const weightedValue = averageScale * weightDecimal;
 				$(this).find("td.weighted").text(weightedValue.toFixed(2));
 			});
 	}
+
+	$(document).on("input", ".colItems", function () {
+		let totalItems = 0;
+		$(".itemsRow input.colItems").each(function () {
+			totalItems += parseFloat($(this).val()) || 0;
+		});
+		$(".itemsRow .totalItemsHeader").text(totalItems);
+		calculateAverage();
+	});
 });

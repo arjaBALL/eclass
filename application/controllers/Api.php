@@ -84,18 +84,20 @@ class Api extends CI_Controller
         echo json_encode($teacherSubject);
     }
 
-    public function getCriteria()
-    {
-        $schedule_id = $this->input->get('schedule_id');
+        public function getCriteria()
+        {
+            $schedule_id = $this->input->get('schedule_id');
+            $grade_period = $this->input->get('grade_period'); // Get grade period
 
-        if (!$schedule_id) {
-            echo json_encode([]);
-            return;
+            if (!$schedule_id || !$grade_period) {
+                echo json_encode([]);
+                return;
+            }
+
+            $criteria = $this->Criteria_model->get_criteria_by_schedule($schedule_id, $grade_period);
+            echo json_encode($criteria);
         }
 
-        $criteria = $this->Criteria_model->get_criteria_by_schedule($schedule_id);
-        echo json_encode($criteria);
-    }
 
     public function getStudents()
     {
@@ -232,7 +234,7 @@ class Api extends CI_Controller
         $data = [
             'schedule_id' => $recordScoreBtn,
             'criteria' => $criteria,
-            'grading_period' => $grading_period,
+            'grading_id' => $grading_period,
             'weight' => $weight
         ];
 

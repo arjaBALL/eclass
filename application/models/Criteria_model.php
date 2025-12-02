@@ -4,11 +4,12 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 class Criteria_model extends CI_Model
 {
 
-    public function get_criteria_by_schedule($schedule_id)
+    public function get_criteria_by_schedule($schedule_id, $grade_period)
     {
         $this->db->select('*');
         $this->db->from('tbl_subject_criteria');
         $this->db->where('schedule_id', $schedule_id);
+        $this->db->where('grading_id', $grade_period);
         $query = $this->db->get();
         return $query->result_array();
     }
