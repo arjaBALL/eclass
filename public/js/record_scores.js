@@ -12,7 +12,7 @@ $(document).ready(function () {
 	let criteriaColumns = [];
 	let currentCriteriaId = null;
 	let currentScheduleId = null;
-	let currentGradePeriod = null; // Track which grade period we're working with
+	let currentGradePeriod = null;
 
 	// ========== DATA LOADING ==========
 
@@ -89,11 +89,11 @@ $(document).ready(function () {
                                     </div>
                                 </div>
                                 <div class="col-5 d-flex justify-content-center align-items-center">
-                                    <button type="button" class="btn btn-primary btn-sm manageBtn" data-criteria-id="${
-																			c.id
-																		}" data-criteria-weight="${
-							c.weight
-						}">Manage</button>
+                                    <button type="button" class="btn btn-primary btn-sm manageBtn" 
+                                        data-criteria-id="${c.id}" 
+                                        data-criteria-weight="${
+																					c.weight
+																				}">Manage</button>
                                 </div>
                             </div>
                         </div>
@@ -128,7 +128,7 @@ $(document).ready(function () {
 		window.selectedCriteriaName = selectedCriteria.name;
 
 		$.ajax({
-			url: BASE_URL + "index.php/Api/getStudents",
+			url: BASE_URL + "index.php/Api/getStudentScore",
 			type: "GET",
 			data: {
 				schedule_id: currentScheduleId,
@@ -181,6 +181,7 @@ $(document).ready(function () {
 
 		$("#subjectsData").html(html);
 	}
+
 	function renderSubjectSchedulesTable(schedules) {
 		const filterDepartmentSelect = $("#filterDepartmentSelect").val();
 		const filterStatusSelect = $("#filterStatusSelect").val();
@@ -223,12 +224,10 @@ $(document).ready(function () {
 						name="gradingPeriodSelect"  
 						class="form-select form-select-sm recordScoreBtn"
 						data-id="${schedules.id}">
-						
 						<option value="">Choose:</option>
 						${gradingOptions}
 					</select>
 				</td>
-
 			</tr>`;
 			});
 		} else {
@@ -242,8 +241,23 @@ $(document).ready(function () {
 	function renderScoreTable(students, selectedCriteria) {
 		$("#subjectScheduleData").empty();
 
+		let allColIndexes = new Set();
+		students.forEach((s) => {
+			if (s.scores && s.scores.length > 0) {
+				s.scores.forEach((score) => {
+					allColIndexes.add(score.col_index);
+				});
+			}
+		});
+
+		let colIndexArray = Array.from(allColIndexes).sort((a, b) => a - b);
+
 		let header = "<th>Students</th>";
-		header += `<th class="score-column">${selectedCriteria.name}</th>`;
+		colIndexArray.forEach((colIndex, i) => {
+			header += `<th class="score-column" data-col-index="${colIndex}">Score ${
+				colIndex + 1
+			}</th>`;
+		});
 		header += `<th class="summary-column">Total Score</th>`;
 		header += `<th class="summary-column average">Average</th>`;
 		header += `<th class="summary-column weighted">Weighted Grade (Base on ${(
@@ -252,15 +266,18 @@ $(document).ready(function () {
 		$("#scoresTableHeader").html(header);
 
 		let itemsRow = `<tr class="itemsRow"><td>Items</td>`;
-		itemsRow += `
-        <td class="score-column">
-            <input type="number" class="form-control colItems" data-col-index="0" value="${
-							selectedCriteria.items || 0
-						}" placeholder="Items">
-        </td>`;
-		itemsRow += `<td class="summary-column totalItemsHeader">${
-			selectedCriteria.items || 0
-		}</td>`;
+		colIndexArray.forEach((colIndex) => {
+			itemsRow += `
+            <td class="score-column">
+                <input type="number" class="form-control colItems" 
+                    data-col-index="${colIndex}" 
+                    value="${selectedCriteria.items || 0}" 
+                    placeholder="Items">
+            </td>`;
+		});
+
+		let totalItems = (selectedCriteria.items || 0) * colIndexArray.length;
+		itemsRow += `<td class="summary-column totalItemsHeader">${totalItems}</td>`;
 		itemsRow += `<td class="summary-column itemsAverage">1.0</td>`;
 		itemsRow += `<td class="summary-column itemsWeighted">0.00</td></tr>`;
 		$("#subjectScheduleData").html(itemsRow);
@@ -268,22 +285,35 @@ $(document).ready(function () {
 		students.forEach((s) => {
 			let row = `<tr data-student-id="${s.id}"><td>${s.fullname}</td>`;
 
-			const earned = s.scores?.[0]?.earned || "";
-			row += `
-            <td class="score-column">
-                <input type="number" 
-                    class="form-control studentScoreEarned"
-                    data-student-id="${s.id}"
-                    data-col-index="0"
-                    data-criteria-id="${selectedCriteria.id}"
-                    placeholder="Score"
-                    value="${earned}">
-            </td>`;
+			colIndexArray.forEach((colIndex) => {
+				const scoreData =
+					s.scores?.find((score) => score.col_index == colIndex) || {};
+				const earned = scoreData.score || "";
+
+				row += `
+                <td class="score-column">
+                    <input type="number" 
+                        class="form-control studentScoreEarned"
+                        data-student-id="${s.id}"
+                        data-col-index="${colIndex}"
+                        data-criteria-id="${selectedCriteria.id}"
+                        placeholder="Score"
+                        value="${earned}">
+                </td>`;
+			});
+
+			const gradeReport = s.grade_report || {};
 
 			row += `
-            <td class="summary-column totalScore text-center">0</td>
-            <td class="summary-column average text-center">0.00</td>
-            <td class="summary-column weighted text-center">0.00</td>
+            <td class="summary-column totalScore text-center">${
+							gradeReport.total_score || 0
+						}</td>
+            <td class="summary-column average text-center">${
+							gradeReport.average || "0.00"
+						}</td>
+            <td class="summary-column weighted text-center">${
+							gradeReport.weighted_grade || "0.00"
+						}</td>
         </tr>`;
 
 			$("#subjectScheduleData").append(row);
@@ -291,6 +321,7 @@ $(document).ready(function () {
 
 		calculateAverage();
 	}
+
 	$(document).on("input", ".studentScoreEarned, .colItems", function () {
 		calculateAverage();
 	});
@@ -365,7 +396,7 @@ $(document).ready(function () {
 	});
 
 	$(document).on("click", "#addScoreColumn", function () {
-		const newIndex = criteriaColumns.length;
+		const newIndex = $(".score-column").length - 1; // -1 for items row
 
 		let usedWeight = criteriaColumns.reduce(
 			(sum, c) => sum + parseFloat(c.weight || 0),
@@ -408,7 +439,8 @@ $(document).ready(function () {
             <td class="score-column">
                 <input type="number" class="form-control studentScoreEarned" 
                     data-student-id="${$(this).data("student-id")}" 
-                    data-col-index="${newIndex}" 
+                    data-col-index="${newIndex}"
+                    data-criteria-id="${currentCriteriaId}"
                     placeholder="Score">
             </td>`);
 			});
@@ -426,20 +458,30 @@ $(document).ready(function () {
 
 	$(document).on("click", "#saveScoresBtn", function () {
 		const dataToSave = [];
+
 		$("#subjectScheduleData tr")
 			.not(".itemsRow")
 			.each(function () {
 				const studentId = $(this).data("student-id");
+				const totalScore =
+					parseFloat($(this).find("td.totalScore").text()) || 0;
+				const average = parseFloat($(this).find("td.average").text()) || 0;
+				const weighted = parseFloat($(this).find("td.weighted").text()) || 0;
+
 				$(this)
 					.find("input.studentScoreEarned")
 					.each(function () {
 						const colIndex = $(this).data("col-index");
 						const score = $(this).val();
+
 						if (score !== "") {
 							dataToSave.push({
 								student_id: studentId,
 								col_index: colIndex,
 								score: score,
+								total_score: totalScore,
+								average: average,
+								weighted_grade: weighted,
 							});
 						}
 					});
@@ -464,7 +506,6 @@ $(document).ready(function () {
 						".",
 					confirmButtonText: "OK",
 				});
-				calculateAverage();
 			},
 			error: function () {
 				Swal.fire({
@@ -478,9 +519,18 @@ $(document).ready(function () {
 	});
 
 	$(document).on("change", ".studentScoreEarned", function () {
+		const $row = $(this).closest("tr");
 		const studentId = $(this).data("student-id");
 		const colIndex = $(this).data("col-index");
 		const score = $(this).val();
+
+		// Calculate immediately
+		calculateAverage();
+
+		// Get calculated values
+		const totalScore = parseFloat($row.find("td.totalScore").text()) || 0;
+		const average = parseFloat($row.find("td.average").text()) || 0;
+		const weighted = parseFloat($row.find("td.weighted").text()) || 0;
 
 		if (score !== "") {
 			$.ajax({
@@ -492,10 +542,16 @@ $(document).ready(function () {
 					grade_period: currentGradePeriod,
 					student_id: studentId,
 					col_index: colIndex,
-					score,
+					score: score,
+					total_score: totalScore,
+					average: average,
+					weighted_grade: weighted,
 				},
 				success: function () {
-					calculateAverage();
+					console.log("Score saved successfully");
+				},
+				error: function () {
+					console.error("Failed to save score");
 				},
 			});
 		}
@@ -522,7 +578,6 @@ $(document).ready(function () {
 		});
 
 		$(".itemsRow .totalItemsHeader").text(totalItems);
-
 		$(".itemsRow .itemsAverage").text("1.0");
 
 		const itemsWeighted = weightDecimal;

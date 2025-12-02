@@ -736,4 +736,158 @@ class Api extends CI_Controller
         }
     }
 
+     public function saveAllStudentScores()
+    {
+        header('Content-Type: application/json');
+
+        $schedule_id  = $this->input->post('schedule_id');
+        $criteria_id  = $this->input->post('criteria_id');
+        $grade_period = $this->input->post('grade_period');
+        $scores        = $this->input->post('scores');
+
+        if (empty($schedule_id) || empty($criteria_id) || empty($grade_period) || empty($scores)) {
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Missing required fields'
+            ]);
+            return;
+        }
+
+        $success_count = 0;
+
+        foreach ($scores as $score_item) {
+
+            $score_data = [
+                'student_id'  => $score_item['student_id'],
+                'schedule_id' => $schedule_id,
+                'criteria_id' => $criteria_id,
+                'col_index'   => $score_item['col_index'],
+                'score'       => $score_item['score'] ?: 0.00,
+                'total_score' => $score_item['total_score'] ?: 0.00
+            ];
+
+            // Insert or update score
+            $score_id = $this->Record_score_model->insert_or_update_score($score_data);
+
+            if ($score_id) {
+
+                $grade_report_id = $this->Record_score_model->getOrCreateGradeReport(
+                    $score_item['student_id'],
+                    $schedule_id,
+                    $criteria_id,
+                    $score_item['average'],
+                    $score_item['weighted_grade'],
+                    $grade_period
+                );
+
+                // Link
+                $this->Record_score_model->update_score_grade_report($score_id, $grade_report_id);
+
+                $success_count++;
+            }
+        }
+
+        if ($success_count > 0) {
+            echo json_encode([
+                'status' => 'success',
+                'message' => 'All scores saved successfully',
+                'count' => $success_count
+            ]);
+        } else {
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Failed to save scores'
+            ]);
+        }
+    }
+
+    // SAVE SINGLE STUDENT SCORE PER COLUMN
+    public function saveStudentScoreColumn()
+    {
+        header('Content-Type: application/json');
+
+        $student_id     = $this->input->post('student_id');
+        $schedule_id    = $this->input->post('schedule_id');
+        $criteria_id    = $this->input->post('criteria_id');
+        $grade_period   = $this->input->post('grade_period');
+        $col_index      = $this->input->post('col_index');
+        $score          = $this->input->post('score');
+        $total_score    = $this->input->post('total_score');
+        $average        = $this->input->post('average');
+        $weighted_grade = $this->input->post('weighted_grade');
+
+        if (
+            empty($student_id) ||
+            empty($schedule_id) ||
+            empty($criteria_id) ||
+            empty($grade_period) ||
+            !isset($col_index)
+        ) {
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Missing required fields'
+            ]);
+            return;
+        }
+
+        $score_data = [
+            'student_id'  => $student_id,
+            'schedule_id' => $schedule_id,
+            'criteria_id' => $criteria_id,
+            'col_index'   => $col_index,
+            'score'       => $score ?: 0.00,
+            'total_score' => $total_score ?: 0.00
+        ];
+
+        $score_id = $this->Record_score_model->insert_or_update_score($score_data);
+
+        if (!$score_id) {
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Failed to save score'
+            ]);
+            return;
+        }
+
+        $grade_report_id = $this->Record_score_model->getOrCreateGradeReport(
+            $student_id,
+            $schedule_id,
+            $criteria_id,
+            $average,
+            $weighted_grade,
+            $grade_period
+        );
+
+        if (!$grade_report_id) {
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Failed to save grade report'
+            ]);
+            return;
+        }
+
+        $this->Record_score_model->update_score_grade_report($score_id, $grade_report_id);
+
+        echo json_encode([
+            'status'          => 'success',
+            'message'         => 'Score and grade report saved successfully',
+            'score_id'        => $score_id,
+            'grade_report_id' => $grade_report_id
+        ]);
+    }
+
+    public function getStudentScore() {
+        $schedule_id = $this->input->get('schedule_id');
+        $criteria_id = $this->input->get('criteria_id');
+        $grade_period = $this->input->get('grade_period');
+        
+        $students = $this->Students_model->get_students_with_scores(
+            $schedule_id, 
+            $criteria_id, 
+            $grade_period
+        );
+        
+        echo json_encode($students);
+    }
+
 }

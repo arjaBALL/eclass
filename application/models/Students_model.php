@@ -46,4 +46,56 @@ class Students_model extends CI_Model
         $query = $this->db->get();
         return $query->result();
     }
+
+    public function get_students_with_scores($schedule_id, $criteria_id, $grade_period) {
+        $students = $this->get_students_by_schedule($schedule_id);
+        
+        foreach ($students as &$student) {
+            $student->scores = $this->get_student_scores(
+                $student->id, 
+                $schedule_id, 
+                $criteria_id
+            );
+            
+            $student->grade_report = $this->get_student_grade_report(
+                $student->id, 
+                $schedule_id, 
+                $criteria_id, 
+                $grade_period
+            );
+        }
+        
+        return $students;
+    }
+
+    public function get_students_by_schedule($schedule_id) {
+        return $this->db->select('s.id, CONCAT(s.firstname, " ", s.lastname) as fullname')
+            ->from('tbl_student s')
+            ->join('tbl_student_schedules ss', 'ss.student_id = s.id')
+            ->where('ss.schedule_id', $schedule_id)
+            ->get()
+            ->result();
+    }
+
+    public function get_student_scores($student_id, $schedule_id, $criteria_id) {
+        return $this->db->select('score, col_index, score')
+            ->from('tbl_scores')
+            ->where('student_id', $student_id)
+            ->where('schedule_id', $schedule_id)
+            ->where('criteria_id', $criteria_id)
+            ->order_by('col_index', 'ASC')
+            ->get()
+            ->result_array();
+    }
+
+    public function get_student_grade_report($student_id, $schedule_id, $criteria_id, $grade_period) {
+        return $this->db->select('average, weighted_grade')
+            ->from('tbl_grade_report')
+            ->where('student_id', $student_id)
+            ->where('schedule_id', $schedule_id)
+            ->where('criteria_id', $criteria_id)
+            ->where('grade_period', $grade_period)
+            ->get()
+                 ->row_array();
+    }
 }
