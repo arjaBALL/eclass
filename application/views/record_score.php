@@ -67,6 +67,19 @@
         <input type="number" name="weight" class="form-control form-control-sm" id="weight" required>
       </div>
 
+      <div class="mt-2 col-2">
+        <label for="gradingPeriodSelect" class="form-label mb-0">
+          <small>Subject</small>
+        </label>
+        <select id="gradingPeriodSelect" name="gradingPeriodSelect" class="form-select form-select-sm">
+          <option value="">Choose:</option>
+          <?php foreach ($grading_periods as $grading_period): ?>
+            <option value="<?= $grading_period['id'] ?>"><?= $grading_period['grading_period'] ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+
       <div class="pb-1">
         <button type="submit" class="btn btn-primary btn-sm">
           Add Criteria

@@ -36,6 +36,7 @@ class Data_loader
             'teachers' => $this->CI->Utilities_model->get_all_teachers(),
             'semesters' => $this->CI->Utilities_model->get_all_semesters(),
             'rooms' => $this->CI->Utilities_model->get_all_rooms(),
+            'grading_periods' => $this->CI->Utilities_model->get_all_grading_period(),
 
             // Optional: logged-in teacher_id
             'logged_in_teacher_id' => $user_id

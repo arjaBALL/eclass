@@ -75,9 +75,15 @@ class Utilities_model extends CI_Model
         return $query->result_array();
     }
 
-      public function get_all_rooms()
+    public function get_all_rooms()
     {
         $query = $this->db->get('tbl_rooms');
+        return $query->result_array();
+    }
+
+    public function get_all_grading_period()
+    {
+        $query = $this->db->get('tbl_grading_period');
         return $query->result_array();
     }
 }

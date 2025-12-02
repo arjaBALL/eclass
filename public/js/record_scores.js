@@ -12,6 +12,7 @@ $(document).ready(function () {
 	let criteriaColumns = [];
 	let currentCriteriaId = null;
 	let currentScheduleId = null;
+	let currentGradePeriod = null; // Track which grade period we're working with
 
 	// ========== DATA LOADING ==========
 
@@ -51,16 +52,28 @@ $(document).ready(function () {
 		});
 	});
 
-	function fetchCriteria(scheduleId) {
+	function fetchCriteria(scheduleId, gradePeriod) {
 		$.ajax({
 			url: BASE_URL + "index.php/Api/getCriteria",
 			type: "GET",
-			data: { schedule_id: scheduleId },
+			data: { schedule_id: scheduleId, grade_period: gradePeriod },
 			dataType: "json",
 			success: function (response) {
 				let html = "";
 
 				if (response && response.length > 0) {
+					criteriaColumns = response.map((c) => ({
+						id: c.id,
+						name: c.criteria,
+						weight: parseFloat(c.weight) || 0,
+						items: parseInt(c.items) || 0,
+					}));
+
+					console.log(
+						"Loaded Criteria for " + gradePeriod + ":",
+						criteriaColumns
+					);
+
 					response.forEach((c) => {
 						html += `
                         <div class="border rounded p-2 px-2 mb-2">
@@ -78,7 +91,9 @@ $(document).ready(function () {
                                 <div class="col-5 d-flex justify-content-center align-items-center">
                                     <button type="button" class="btn btn-primary btn-sm manageBtn" data-criteria-id="${
 																			c.id
-																		}">Manage</button>
+																		}" data-criteria-weight="${
+							c.weight
+						}">Manage</button>
                                 </div>
                             </div>
                         </div>
@@ -99,20 +114,49 @@ $(document).ready(function () {
 		});
 	}
 
+	$(document).on("click", ".manageBtn", function () {
+		currentCriteriaId = $(this).data("criteria-id");
+
+		const selectedCriteria = criteriaColumns.find(
+			(c) => c.id == currentCriteriaId
+		);
+		console.log("Manage clicked for criteria:", selectedCriteria);
+
+		if (!currentCriteriaId || !currentScheduleId) return;
+
+		window.selectedCriteriaWeight = selectedCriteria.weight;
+		window.selectedCriteriaName = selectedCriteria.name;
+
+		$.ajax({
+			url: BASE_URL + "index.php/Api/getStudents",
+			type: "GET",
+			data: {
+				schedule_id: currentScheduleId,
+				criteria_id: currentCriteriaId,
+				grade_period: currentGradePeriod,
+			},
+			dataType: "json",
+			success: function (students) {
+				console.log("Students loaded for criteria:", selectedCriteria.name);
+				renderScoreTable(students, selectedCriteria);
+			},
+		});
+	});
+
 	// ========== RENDERING ==========
 
 	function renderTeacherSubjects(teachers) {
 		const filterSubjectSelect = $("#filterSubjectSelect").val();
 		let html = "";
 
-		const filteredTeachers = teachers.filter((t) => {
+		const filteredSubjects = teachers.filter((t) => {
 			if (filterSubjectSelect && t.subject_id != filterSubjectSelect)
 				return false;
 			return true;
 		});
 
-		if (filteredTeachers.length > 0) {
-			$.each(filteredTeachers, function (i, teacher) {
+		if (filteredSubjects.length > 0) {
+			$.each(filteredSubjects, function (i, teacher) {
 				const rowClass =
 					teacher.status && teacher.status.trim().toLowerCase() === ""
 						? "highlight-row"
@@ -172,7 +216,7 @@ $(document).ready(function () {
 	        <td>
 	            <button class="btn btn-sm btn-warning recordScoreBtn" data-id="${
 								schedules.id
-							}" title="Delete">
+							}" title="Record Score">
 	               <i class="fa-solid fa-file-pen"></i> Record Score
 	            </button>
 	        </td>
@@ -186,124 +230,78 @@ $(document).ready(function () {
 		$("#subjectSchedulesData").html(html);
 	}
 
-	function renderScoreTable(students) {
-		// Header row
+	function renderScoreTable(students, selectedCriteria) {
+		$("#subjectScheduleData").empty();
+
 		let header = "<th>Students</th>";
-		criteriaColumns.forEach((c, i) => {
-			header += `<th data-col-index="${i}">${
-				c.name || "Score " + (i + 1)
-			}</th>`;
-		});
-		header += `<th>Total Earned</th><th>Total Items</th><th>Average %</th><th>Weighted (%)</th>`;
+		header += `<th class="score-column">${selectedCriteria.name}</th>`;
+		header += `<th class="summary-column">Total Items</th><th class="summary-column average">Average %</th><th class="summary-column weighted">Weighted (%)</th>`;
 		$("#scoresTableHeader").html(header);
 
-		// --- Add items row ---
-		let itemsRow = '<tr class="itemsRow"><td>Items</td>';
-		criteriaColumns.forEach((c, i) => {
-			itemsRow += `<td class="criteriaItems">${c.items || 0}</td>`;
-		});
-		itemsRow += '<td colspan="4"></td></tr>';
-
+		let itemsRow = `<tr class="itemsRow"><td>Items</td>`;
+		itemsRow += `
+        <td class="score-column">
+            <input type="number" class="form-control colItems" data-col-index="0" value="${
+							selectedCriteria.items || 0
+						}" placeholder="Items">
+        </td>`;
+		itemsRow += `<td class="summary-column"></td><td class="summary-column"></td><td class="summary-column"></td></tr>`;
 		$("#subjectScheduleData").html(itemsRow);
 
-		// Student rows
 		students.forEach((s) => {
-			let studentRow = `<tr data-student-id="${s.id}"><td>${s.fullname}</td>`;
-			criteriaColumns.forEach((c, i) => {
-				const earned = s.scores?.[i]?.earned || "";
-				const total = s.scores?.[i]?.total || "";
-				studentRow += `<td>
-                <input type="number" class="form-control studentScoreEarned" 
-                    data-student-id="${s.id}" data-col-index="${i}" placeholder="Earned" value="${earned}" style="width:45%; display:inline-block;">
-                /
-                <input type="number" class="form-control studentScoreTotal" 
-                    data-student-id="${s.id}" data-col-index="${i}" placeholder="Total" value="${total}" style="width:45%; display:inline-block;">
+			let row = `<tr data-student-id="${s.id}"><td>${s.fullname}</td>`;
+
+			const earned = s.scores?.[0]?.earned || "";
+			row += `
+            <td class="score-column">
+                <input type="number" 
+                    class="form-control studentScoreEarned"
+                    data-student-id="${s.id}"
+                    data-col-index="0"
+                    data-criteria-id="${selectedCriteria.id}"
+                    placeholder="Score"
+                    value="${earned}">
             </td>`;
-			});
-			studentRow += `<td class="totalEarned">0</td><td class="totalItems">0</td><td class="average">0</td><td class="weighted">0</td></tr>`;
-			$("#subjectScheduleData").append(studentRow);
+
+			row += `
+            <td class="summary-column totalItems text-center">0</td>
+            <td class="summary-column average text-center">0.00</td>
+            <td class="summary-column weighted text-center">0.00</td>
+        </tr>`;
+
+			$("#subjectScheduleData").append(row);
 		});
 
 		calculateAverage();
 	}
 
-	// Listen to changes in earned/total inputs
-	$(document).on(
-		"input",
-		".studentScoreEarned, .studentScoreTotal",
-		function () {
-			calculateAverage();
-		}
-	);
-
-	function calculateAverage() {
-		$("#subjectScheduleData tr").each(function () {
-			let totalEarned = 0,
-				totalItems = 0;
-
-			$(this)
-				.find("td")
-				.each(function (index) {
-					const earnedInput = $(this).find(".studentScoreEarned");
-					const totalInput = $(this).find(".studentScoreTotal");
-
-					if (earnedInput.length && totalInput.length) {
-						const earned = parseFloat(earnedInput.val()) || 0;
-						const total = parseFloat(totalInput.val()) || 0;
-
-						totalEarned += earned;
-						totalItems += total;
-					}
-				});
-
-			const average =
-				totalItems > 0 ? ((totalEarned / totalItems) * 100).toFixed(2) : 0;
-			$(this).find("td.totalEarned").text(totalEarned);
-			$(this).find("td.totalItems").text(totalItems);
-			$(this).find("td.average").text(average);
-
-			// Weighted = average * sum of criteria weights / 100
-			let weighted = 0;
-			criteriaColumns.forEach((c, i) => {
-				const weight = parseFloat(c.weight) || 0;
-				const earned =
-					parseFloat(
-						$(this)
-							.find(`input.studentScoreEarned[data-col-index='${i}']`)
-							.val()
-					) || 0;
-				const total =
-					parseFloat(
-						$(this).find(`input.studentScoreTotal[data-col-index='${i}']`).val()
-					) || 0;
-				if (total > 0) {
-					weighted += (earned / total) * 100 * (weight / 100);
-				}
-			});
-			$(this).find("td.weighted").text(weighted.toFixed(2));
-		});
-	}
+	$(document).on("input", ".studentScoreEarned, .colItems", function () {
+		calculateAverage();
+	});
 
 	// ========== FORM SUBMISSIONS ==========
 
 	$("#criteriaForm").submit(function (event) {
 		event.preventDefault();
 
+		const formData =
+			$(this).serialize() + "&grade_period=" + currentGradePeriod;
+
 		$.ajax({
 			url: BASE_URL + "index.php/Api/addCriteria",
 			type: "POST",
-			data: $(this).serialize(),
+			data: formData,
 			dataType: "json",
 			success: function (response) {
 				if (response.status === "success") {
 					Swal.fire({
 						icon: "success",
 						title: "Success!",
-						text: "Criteria successfully added!",
+						text: "Criteria successfully added for " + currentGradePeriod + "!",
 						confirmButtonText: "OK",
 					}).then(() => {
-						$("#criteriasForm")[0].reset();
-						fetchCriteria();
+						$("#criteriaForm")[0].reset();
+						fetchCriteria(currentScheduleId, currentGradePeriod);
 					});
 				} else if (response.status === "error") {
 					Swal.fire({
@@ -335,41 +333,56 @@ $(document).ready(function () {
 		$("#recordScoreBtn").val(scheduleId);
 	});
 
-	$(document).on("click", ".manageBtn", function () {
-		currentCriteriaId = $(this).data("criteria-id");
-		currentScheduleId = $("#recordScoreBtn").val();
-
-		if (!currentCriteriaId || !currentScheduleId) return;
-
-		$.ajax({
-			url: BASE_URL + "index.php/Api/getStudents",
-			type: "GET",
-			data: { schedule_id: currentScheduleId, criteria_id: currentCriteriaId },
-			dataType: "json",
-			success: function (students) {
-				criteriaColumns = [];
-				renderScoreTable(students);
-			},
-		});
-	});
-
 	$(document).on("click", "#addScoreColumn", function () {
 		const newIndex = criteriaColumns.length;
-		criteriaColumns.push({});
 
-		// Insert new header after "Students" column
-		$("#scoresTableHeader th:nth-child(1)").after(
-			`<th data-col-index="${newIndex}">Score ${newIndex + 1}</th>`
+		let usedWeight = criteriaColumns.reduce(
+			(sum, c) => sum + parseFloat(c.weight || 0),
+			0
+		);
+		let remainingWeight = Math.max(0, 100 - usedWeight);
+
+		console.log(
+			`Adding Score Column | Used Weight: ${usedWeight}% | Remaining: ${remainingWeight}%`
 		);
 
-		// Add input to each student row after the first td (Students)
-		$("#subjectScheduleData tr").each(function () {
-			$(this).find("td:first").after(`<td>
-            <input type="number" class="form-control studentScore" 
-                data-student-id="${$(this).data("student-id")}" 
-                data-col-index="${newIndex}" value="">
-        </td>`);
+		criteriaColumns.push({
+			id: null,
+			name: "Score " + (newIndex + 1),
+			weight: remainingWeight,
+			items: 0,
+			isDynamic: true,
 		});
+
+		$("#scoresTableHeader th.summary-column:first").before(
+			`<th class="score-column" data-col-index="${newIndex}">Score ${
+				newIndex + 1
+			}</th>`
+		);
+
+		$(".itemsRow td.summary-column:first").before(`
+        <td class="score-column">
+            <input type="number" 
+                class="form-control colItems"
+                data-col-index="${newIndex}"
+                value="0"
+                placeholder="Items">
+        </td>
+    `);
+
+		$("#subjectScheduleData tr")
+			.not(".itemsRow")
+			.each(function () {
+				$(this).find("td.summary-column:first").before(`
+            <td class="score-column">
+                <input type="number" class="form-control studentScoreEarned" 
+                    data-student-id="${$(this).data("student-id")}" 
+                    data-col-index="${newIndex}" 
+                    placeholder="Score">
+            </td>`);
+			});
+
+		calculateAverage();
 	});
 
 	if ($("#saveScoresBtn").length === 0) {
@@ -382,20 +395,24 @@ $(document).ready(function () {
 
 	$(document).on("click", "#saveScoresBtn", function () {
 		const dataToSave = [];
-		$("#subjectScheduleData tr").each(function () {
-			const studentId = $(this).data("student-id");
-			$(this)
-				.find("input.studentScore")
-				.each(function () {
-					const colIndex = $(this).data("col-index");
-					const score = $(this).val();
-					dataToSave.push({
-						student_id: studentId,
-						col_index: colIndex,
-						score: score,
+		$("#subjectScheduleData tr")
+			.not(".itemsRow")
+			.each(function () {
+				const studentId = $(this).data("student-id");
+				$(this)
+					.find("input.studentScoreEarned")
+					.each(function () {
+						const colIndex = $(this).data("col-index");
+						const score = $(this).val();
+						if (score !== "") {
+							dataToSave.push({
+								student_id: studentId,
+								col_index: colIndex,
+								score: score,
+							});
+						}
 					});
-				});
-		});
+			});
 
 		$.ajax({
 			url: BASE_URL + "index.php/Api/saveAllStudentScores",
@@ -403,13 +420,17 @@ $(document).ready(function () {
 			data: {
 				schedule_id: currentScheduleId,
 				criteria_id: currentCriteriaId,
+				grade_period: currentGradePeriod,
 				scores: dataToSave,
 			},
 			success: function () {
 				Swal.fire({
 					icon: "success",
 					title: "Scores Saved!",
-					text: "All student scores have been saved.",
+					text:
+						"All student scores have been saved for " +
+						currentGradePeriod +
+						".",
 					confirmButtonText: "OK",
 				});
 				calculateAverage();
@@ -425,25 +446,28 @@ $(document).ready(function () {
 		});
 	});
 
-	$(document).on("change", ".studentScore", function () {
+	$(document).on("change", ".studentScoreEarned", function () {
 		const studentId = $(this).data("student-id");
 		const colIndex = $(this).data("col-index");
 		const score = $(this).val();
 
-		$.ajax({
-			url: BASE_URL + "index.php/Api/saveStudentScoreColumn",
-			type: "POST",
-			data: {
-				schedule_id: currentScheduleId,
-				criteria_id: currentCriteriaId,
-				student_id: studentId,
-				col_index: colIndex,
-				score,
-			},
-			success: function () {
-				calculateAverage();
-			},
-		});
+		if (score !== "") {
+			$.ajax({
+				url: BASE_URL + "index.php/Api/saveStudentScoreColumn",
+				type: "POST",
+				data: {
+					schedule_id: currentScheduleId,
+					criteria_id: currentCriteriaId,
+					grade_period: currentGradePeriod,
+					student_id: studentId,
+					col_index: colIndex,
+					score,
+				},
+				success: function () {
+					calculateAverage();
+				},
+			});
+		}
 	});
 
 	$("#filterSubjectSelect").on("change", function () {
@@ -457,59 +481,44 @@ $(document).ready(function () {
 
 	// ========== CALCULATIONS ==========
 
-	$(document).on(
-		"input",
-		".studentScoreEarned, .studentScoreTotal",
-		function () {
-			calculateAverage();
-		}
-	);
-
 	function calculateAverage() {
-		$("#subjectScheduleData tr").each(function () {
-			let totalEarned = 0,
-				totalItems = 0;
+		const selectedWeight = window.selectedCriteriaWeight || 0;
+		const selectedCriteriaName = window.selectedCriteriaName || "Unknown";
 
-			$(this)
-				.find("td")
-				.each(function (index) {
-					const earnedInput = $(this).find(".studentScoreEarned");
-					const totalInput = $(this).find(".studentScoreTotal");
+		$("#subjectScheduleData tr")
+			.not(".itemsRow")
+			.each(function () {
+				let totalItems = 0;
+				let totalEarned = 0;
 
-					if (earnedInput.length && totalInput.length) {
-						const earned = parseFloat(earnedInput.val()) || 0;
-						const total = parseFloat(totalInput.val()) || 0;
-
-						totalEarned += earned;
-						totalItems += total;
-					}
-				});
-
-			const average =
-				totalItems > 0 ? ((totalEarned / totalItems) * 100).toFixed(2) : 0;
-			$(this).find("td.totalEarned").text(totalEarned);
-			$(this).find("td.totalItems").text(totalItems);
-			$(this).find("td.average").text(average);
-
-			// Weighted = average * sum of criteria weights / 100
-			let weighted = 0;
-			criteriaColumns.forEach((c, i) => {
-				const weight = parseFloat(c.weight) || 0;
+				const items =
+					parseFloat($(`.itemsRow input.colItems[data-col-index='0']`).val()) ||
+					0;
 				const earned =
 					parseFloat(
-						$(this)
-							.find(`input.studentScoreEarned[data-col-index='${i}']`)
-							.val()
+						$(this).find(`input.studentScoreEarned[data-col-index='0']`).val()
 					) || 0;
-				const total =
-					parseFloat(
-						$(this).find(`input.studentScoreTotal[data-col-index='${i}']`).val()
-					) || 0;
-				if (total > 0) {
-					weighted += (earned / total) * 100 * (weight / 100);
+
+				const weightDecimal = selectedWeight / 100;
+
+				if (items > 0) {
+					totalItems = items;
+					totalEarned = earned;
 				}
+
+				$(this).find("td.totalItems").text(totalItems);
+
+				let averagePercent =
+					totalItems > 0 ? (totalEarned / totalItems) * 100 : 0;
+
+				let averageScale = 5 - (averagePercent / 100) * 4;
+				averageScale = Math.min(Math.max(averageScale, 1), 5).toFixed(2);
+
+				$(this).find("td.average").text(averageScale);
+
+				let weightedValue = averageScale * weightDecimal;
+
+				$(this).find("td.weighted").text(weightedValue.toFixed(2));
 			});
-			$(this).find("td.weighted").text(weighted.toFixed(2));
-		});
 	}
 });

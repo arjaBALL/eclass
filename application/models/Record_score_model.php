@@ -3,10 +3,11 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Record_score_model extends CI_Model
 {
-    public function validate_data($recordScoreBtn, $criteria, $weight)
+    public function validate_data($recordScoreBtn, $criteria, $weight, $grading_period)
     {
         $this->db->where('schedule_id', $recordScoreBtn);
         $this->db->where('criteria', $criteria);
+        $this->db->where('grading_period', $grading_period);
         $this->db->where('weight', $weight);
         $query = $this->db->get('tbl_subject_criteria');
 

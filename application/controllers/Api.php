@@ -209,18 +209,20 @@ class Api extends CI_Controller
     {
         $recordScoreBtn = $this->input->post('recordScoreBtn');
         $criteria = $this->input->post('criteria');
+        $grading_period = $this->input->post('gradingPeriodSelect');
         $weight = $this->input->post('weight');
 
         if (
             empty($recordScoreBtn) ||
             empty($criteria) ||
+            empty($grading_period) ||
             empty($weight)
         ) {
             echo json_encode(['status' => 'error', 'message' => 'All fields are required']);
             return;
         }
 
-        $exists = $this->Record_score_model->validate_data($recordScoreBtn, $criteria, $weight);
+        $exists = $this->Record_score_model->validate_data($recordScoreBtn, $criteria, $weight, $grading_period);
 
         if ($exists) {
             echo json_encode(['status' => 'error', 'message' => 'Subject already exists']);
@@ -230,6 +232,7 @@ class Api extends CI_Controller
         $data = [
             'schedule_id' => $recordScoreBtn,
             'criteria' => $criteria,
+            'grading_period' => $grading_period,
             'weight' => $weight
         ];
 
