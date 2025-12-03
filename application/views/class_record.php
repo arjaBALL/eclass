@@ -1,7 +1,3 @@
-<script>
-const GRADING_PERIODS = <?= json_encode($grading_periods) ?>;
-</script>
-
 <body>
     <div class="row">
         <div class="mb-3 col-2">
@@ -63,16 +59,15 @@ const GRADING_PERIODS = <?= json_encode($grading_periods) ?>;
             <table id="subjects" class="table table-hover table-bordered text-center table-responsive">
                 <thead>
                     <tr>
-                        <th></th>
+                        <th>Rank</th>
                         <th scope="col">Name</th>
                         <th scope="col">Midterm Grade</th>
                         <th>Pre-final Grade</th>
                         <th>Final Grade</th>
                         <th>Remarks</th>
-                        <th>Rank</th>
                     </tr>
                 </thead>
-                <tbody id="subjectSchedulesData">
+                <tbody id="gradeReportData">
                 </tbody>
             </table>
         </div>

@@ -17,6 +17,7 @@ class Api extends CI_Controller
         $this->load->model('Schedules_model');
         $this->load->model('Record_score_model');
         $this->load->model('Criteria_model');
+         $this->load->model('Grade_report_model');
     }
 
     public function get_subjects()
@@ -888,6 +889,22 @@ class Api extends CI_Controller
         );
         
         echo json_encode($students);
+    }
+
+    public function get_grade_reports()
+    {
+        header('Content-Type: application/json');
+
+        $schedule_id = $this->input->get('user_id'); // coming from data-user-id
+
+        if(empty($schedule_id)){
+            echo json_encode([]);
+            return;
+        }
+
+        $data = $this->Grade_report_model->getGradeReportBySchedule($schedule_id);
+
+        echo json_encode($data);
     }
 
 }
