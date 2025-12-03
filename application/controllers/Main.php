@@ -134,4 +134,17 @@ class Main extends CI_Controller
         );
         $this->load->view('main/main', $data);
     }
+
+    public function attendance()
+    {
+        $data = array_merge(
+            // $this->get_session_data(),
+            $this->data_loader->dropdowns(),
+            [
+                'content' => 'attendance',
+                'scripts' => ['attendances']
+            ],
+        );
+        $this->load->view('main/main', $data);
+    }
 }

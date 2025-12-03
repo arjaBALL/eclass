@@ -32,7 +32,7 @@
             <span>Classes</span>
         </a>
 
-        <a class="nav-link mb-2" href="<?= site_url('dashboard') ?>">
+        <a class="nav-link mb-2" href="<?= site_url('attendance') ?>">
             <i class="fa-solid fa-user-check"></i>
             <span>Attendance</span>
         </a>

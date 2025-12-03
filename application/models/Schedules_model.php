@@ -182,11 +182,14 @@ class Schedules_model extends CI_Model
             ss.*,
             CONCAT(st.lastname, ', ', st.firstname, ' ', IFNULL(st.middlename, '')) AS fullname,
             se.section,
+            p.program_name,
             sta.status
         ");
         $this->db->from("tbl_student_schedules ss");
         $this->db->join("tbl_student st", "st.id = ss.student_id", "left");
+        $this->db->join("tbl_year_levels yl", "yl.id = st.year_level_id", "left");
         $this->db->join("tbl_sections se", "se.id = st.section_id", "left");
+        $this->db->join("tbl_programs p", "p.id = st.program_id", "left");
         $this->db->join("tbl_student_status sta", "sta.id = ss.status_id", "left");
         $this->db->where('ss.schedule_id', $teacher_id);
         $this->db->order_by("st.lastname", "ASC");
