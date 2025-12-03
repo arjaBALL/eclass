@@ -111,9 +111,6 @@ const GRADING_PERIODS = <?= json_encode($grading_periods) ?>;
                 <button type="button" id="addScoreColumn" class="btn btn-primary btn-sm">
                     Add New Score
                 </button>
-                <button type="button" class="btn btn-danger btn-sm">
-                    <i class="fa-solid fa-circle-arrow-left"></i>
-                </button>
             </div>
             <table id="scoresTable" class="table table-hover table-bordered text-center table-responsive">
                 <thead>
@@ -131,4 +128,43 @@ const GRADING_PERIODS = <?= json_encode($grading_periods) ?>;
         </div>
 
     </div>
+    <!-- Edit Criteria Modal -->
+    <div class="modal fade" id="editCriteriaModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Criteria</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <form action="" id="editCriteriaForm">
+                        <input type="hidden" id="editCriteriaId">
+
+                        <div class="mb-3">
+                            <label class="form-label">Criteria Name</label>
+                            <input type="text" class="form-control" id="editCriteriaName">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Weight (%)</label>
+                            <input type="number" class="form-control" id="editCriteriaWeight">
+                        </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        Close
+                    </button>
+                    <button type="button" class="btn btn-primary" id="saveEditCriteria">
+                        Save Changes
+                    </button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
 </body>

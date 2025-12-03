@@ -115,6 +115,46 @@ class Api extends CI_Controller
         echo json_encode($students);
     }
 
+    public function get_student_by_id()
+{
+    $id = $this->input->post('id');
+    $data = $this->Students_model->getStudentById($id);
+    echo json_encode($data);
+}
+
+// UPDATE STUDENT
+public function updateStudent()
+{
+    $id = $this->input->post('student_id');
+
+    $data = [
+        'lastname' => $this->input->post('lastName'),
+        'firstname' => $this->input->post('firstName'),
+        'middlename' => $this->input->post('middleName'),
+        'year_level_id' => $this->input->post('yearSelect'),
+        'program_id' => $this->input->post('programSelect'),
+        'section_id' => $this->input->post('sectionSelect'),
+        'status' => $this->input->post('statusSelect')
+    ];
+
+    if ($this->Students_model->updateStudent($id, $data)) {
+        echo json_encode(['status' => 'success', 'message' => 'Student updated successfully']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Update failed']);
+    }
+}
+
+// DELETE STUDENT
+public function deleteStudent()
+{
+    $id = $this->input->post('id');
+
+    if ($this->Students_model->deleteStudent($id)) {
+        echo json_encode(['status' => 'success', 'message' => 'Student deleted successfully']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Delete failed']);
+    }
+}
 
     public function addStudent()
     {
@@ -173,20 +213,20 @@ class Api extends CI_Controller
     {
         $subject = $this->input->post('subject');
         $subjectCode = $this->input->post('subjectCode');
-        $departmentSelect = $this->input->post('departmentSelect');
+        $programSelect = $this->input->post('programSelect');
         $statusSelect = $this->input->post('statusSelect');
 
         if (
             empty($subject) ||
             empty($subjectCode) ||
-            empty($departmentSelect) ||
+            empty($programSelect) ||
             empty($statusSelect)
         ) {
             echo json_encode(['status' => 'error', 'message' => 'All fields are required']);
             return;
         }
 
-        $exists = $this->Subjects_model->validate_data($subject, $subjectCode, $departmentSelect, $statusSelect);
+        $exists = $this->Subjects_model->validate_data($subject, $subjectCode, $programSelect, $statusSelect);
 
         if ($exists) {
             echo json_encode(['status' => 'error', 'message' => 'Subject already exists']);
@@ -196,7 +236,7 @@ class Api extends CI_Controller
         $data = [
             'subject_name' => $subject,
             'subject_code' => $subjectCode,
-            'department_id' => $departmentSelect,
+            'program_id' => $programSelect,
             'status_id' => $statusSelect,
         ];
 
@@ -208,6 +248,65 @@ class Api extends CI_Controller
             echo json_encode(['status' => 'error', 'message' => 'Failed to insert subject']);
         }
     }
+    
+    public function updateSubject($id)
+{
+    // Get POST data from the modal
+    $subject = $this->input->post('subject');
+    $subjectCode = $this->input->post('subjectCode');
+    $programSelect = $this->input->post('programSelect'); // matches modal name
+    $statusSelect = $this->input->post('statusSelect');
+
+    // Validate required fields
+    if (empty($subject) || empty($subjectCode) || empty($programSelect) || empty($statusSelect)) {
+        echo json_encode(['status' => 'error', 'message' => 'All fields are required']);
+        return;
+    }
+
+    // Optional: Check if the subject already exists (excluding current ID)
+    $exists = $this->Subjects_model->validate_data($subject, $subjectCode, $programSelect, $statusSelect);
+
+    if ($exists) {
+        echo json_encode(['status' => 'error', 'message' => 'Subject already exists']);
+        return;
+    }
+
+    // Prepare data array
+    $data = [
+        'subject_name' => $subject,
+        'subject_code' => $subjectCode,
+        'program_id'   => $programSelect,
+        'status_id'    => $statusSelect
+    ];
+
+    // Update subject using model
+    $updated = $this->Subjects_model->update_subject($id, $data);
+
+    if ($updated) {
+        echo json_encode(['status' => 'success', 'message' => 'Subject updated successfully']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Failed to update subject']);
+    }
+}
+
+    public function deleteSubject($id)
+    {
+        if (empty($id)) {
+            echo json_encode(['status' => 'error', 'message' => 'Invalid subject ID']);
+            return;
+        }
+
+        // Call model to delete
+        $deleted = $this->Subjects_model->delete_subject($id);
+
+        if ($deleted) {
+            echo json_encode(['status' => 'success', 'message' => 'Subject deleted successfully']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Failed to delete subject']);
+        }
+    }
+
+
     public function addCriteria()
     {
         $recordScoreBtn = $this->input->post('recordScoreBtn');
@@ -289,6 +388,41 @@ class Api extends CI_Controller
         }
     }
 
+    public function editTeacher($id)
+    {
+        $data = [
+            'teacher_school_id' => $this->input->post('teacherSchoolId'),
+            'lastname' => $this->input->post('lastName'),
+            'firstname' => $this->input->post('firstName'),
+            'middlename' => $this->input->post('middleName'),
+            'department_id' => $this->input->post('departmentSelect'),
+            'status_id' => $this->input->post('statusSelect'),
+            'role_id' => $this->input->post('teacherRoleSelect'),
+        ];
+
+        if (!empty($this->input->post('password'))) {
+            $data['password'] = password_hash($this->input->post('password'), PASSWORD_DEFAULT);
+        }
+
+        $updated = $this->Teacher_model->update_teacher($id, $data);
+
+        if ($updated) {
+            echo json_encode(['status' => 'success']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Update failed.']);
+        }
+    }
+
+    public function deleteTeacher($id)
+    {
+        $deleted = $this->Teacher_model->delete_teacher($id);
+
+        if ($deleted) {
+            echo json_encode(['status' => 'success']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Delete failed.']);
+        }
+    }
     public function get_subjectAssignments()
     {
         header('Content-Type: application/json');
@@ -737,159 +871,163 @@ class Api extends CI_Controller
         }
     }
 
-     public function saveAllStudentScores()
-    {
-        header('Content-Type: application/json');
+public function saveStudentScoreColumn()
+{
+    header('Content-Type: application/json');
 
-        $schedule_id  = $this->input->post('schedule_id');
-        $criteria_id  = $this->input->post('criteria_id');
-        $grade_period = $this->input->post('grade_period');
-        $scores        = $this->input->post('scores');
+    $student_id     = $this->input->post('student_id');
+    $schedule_id    = $this->input->post('schedule_id');
+    $criteria_id    = $this->input->post('criteria_id');
+    $grade_period   = $this->input->post('grade_period');
+    $col_index      = $this->input->post('col_index');
+    $score          = $this->input->post('score');
+    $total_score    = $this->input->post('total_score');
+    $average        = $this->input->post('average');
+    $weighted_grade = $this->input->post('weighted_grade');
+    $total_items    = $this->input->post('total_items'); // Items for this specific column
 
-        if (empty($schedule_id) || empty($criteria_id) || empty($grade_period) || empty($scores)) {
-            echo json_encode([
-                'status' => 'error',
-                'message' => 'Missing required fields'
-            ]);
-            return;
-        }
-
-        $success_count = 0;
-
-        foreach ($scores as $score_item) {
-
-            $score_data = [
-                'student_id'  => $score_item['student_id'],
-                'schedule_id' => $schedule_id,
-                'criteria_id' => $criteria_id,
-                'col_index'   => $score_item['col_index'],
-                'score'       => $score_item['score'] ?: 0.00,
-                'total_score' => $score_item['total_score'] ?: 0.00
-            ];
-
-            // Insert or update score
-            $score_id = $this->Record_score_model->insert_or_update_score($score_data);
-
-            if ($score_id) {
-
-                $grade_report_id = $this->Record_score_model->getOrCreateGradeReport(
-                    $score_item['student_id'],
-                    $schedule_id,
-                    $criteria_id,
-                    $score_item['average'],
-                    $score_item['weighted_grade'],
-                    $grade_period
-                );
-
-                // Link
-                $this->Record_score_model->update_score_grade_report($score_id, $grade_report_id);
-
-                $success_count++;
-            }
-        }
-
-        if ($success_count > 0) {
-            echo json_encode([
-                'status' => 'success',
-                'message' => 'All scores saved successfully',
-                'count' => $success_count
-            ]);
-        } else {
-            echo json_encode([
-                'status' => 'error',
-                'message' => 'Failed to save scores'
-            ]);
-        }
+    if (
+        empty($student_id) ||
+        empty($schedule_id) ||
+        empty($criteria_id) ||
+        empty($grade_period) ||
+        !isset($col_index)
+    ) {
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Missing required fields'
+        ]);
+        return;
     }
 
-    // SAVE SINGLE STUDENT SCORE PER COLUMN
-    public function saveStudentScoreColumn()
-    {
-        header('Content-Type: application/json');
+    $score_data = [
+        'student_id'  => $student_id,
+        'schedule_id' => $schedule_id,
+        'criteria_id' => $criteria_id,
+        'col_index'   => $col_index,
+        'score'       => $score ?: 0.00,
+        'total_score' => $total_score ?: 0.00,
+        'total_items' => $total_items ?: 0 // Items per this column
+    ];
 
-        $student_id     = $this->input->post('student_id');
-        $schedule_id    = $this->input->post('schedule_id');
-        $criteria_id    = $this->input->post('criteria_id');
-        $grade_period   = $this->input->post('grade_period');
-        $col_index      = $this->input->post('col_index');
-        $score          = $this->input->post('score');
-        $total_score    = $this->input->post('total_score');
-        $average        = $this->input->post('average');
-        $weighted_grade = $this->input->post('weighted_grade');
+    $score_id = $this->Record_score_model->insert_or_update_score($score_data);
 
-        if (
-            empty($student_id) ||
-            empty($schedule_id) ||
-            empty($criteria_id) ||
-            empty($grade_period) ||
-            !isset($col_index)
-        ) {
-            echo json_encode([
-                'status' => 'error',
-                'message' => 'Missing required fields'
-            ]);
-            return;
-        }
+    if (!$score_id) {
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Failed to save score'
+        ]);
+        return;
+    }
 
+    $grade_report_id = $this->Record_score_model->getOrCreateGradeReport(
+        $student_id,
+        $schedule_id,
+        $criteria_id,
+        $average,
+        $weighted_grade,
+        $grade_period
+    );
+
+    if (!$grade_report_id) {
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Failed to save grade report'
+        ]);
+        return;
+    }
+
+    $this->Record_score_model->update_score_grade_report($score_id, $grade_report_id);
+
+    echo json_encode([
+        'status'          => 'success',
+        'message'         => 'Score and grade report saved successfully',
+        'score_id'        => $score_id,
+        'grade_report_id' => $grade_report_id
+    ]);
+}
+
+public function saveAllStudentScores()
+{
+    header('Content-Type: application/json');
+
+    $schedule_id  = $this->input->post('schedule_id');
+    $criteria_id  = $this->input->post('criteria_id');
+    $grade_period = $this->input->post('grade_period');
+    $scores       = $this->input->post('scores');
+
+    if (empty($schedule_id) || empty($criteria_id) || empty($grade_period) || empty($scores)) {
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Missing required fields'
+        ]);
+        return;
+    }
+
+    $success_count = 0;
+
+    foreach ($scores as $score_item) {
+
+        // Each score item already contains its specific column's total_items
         $score_data = [
-            'student_id'  => $student_id,
+            'student_id'  => $score_item['student_id'],
             'schedule_id' => $schedule_id,
             'criteria_id' => $criteria_id,
-            'col_index'   => $col_index,
-            'score'       => $score ?: 0.00,
-            'total_score' => $total_score ?: 0.00
+            'col_index'   => $score_item['col_index'],
+            'score'       => $score_item['score'] ?: 0.00,
+            'total_score' => $score_item['total_score'] ?: 0.00,
+            'total_items' => isset($score_item['total_items']) ? $score_item['total_items'] : 0
         ];
 
+        // Insert or update score
         $score_id = $this->Record_score_model->insert_or_update_score($score_data);
 
-        if (!$score_id) {
-            echo json_encode([
-                'status' => 'error',
-                'message' => 'Failed to save score'
-            ]);
-            return;
+        if ($score_id) {
+
+            $grade_report_id = $this->Record_score_model->getOrCreateGradeReport(
+                $score_item['student_id'],
+                $schedule_id,
+                $criteria_id,
+                $score_item['average'],
+                $score_item['weighted_grade'],
+                $grade_period
+            );
+
+            // Link
+            $this->Record_score_model->update_score_grade_report($score_id, $grade_report_id);
+
+            $success_count++;
         }
+    }
 
-        $grade_report_id = $this->Record_score_model->getOrCreateGradeReport(
-            $student_id,
-            $schedule_id,
-            $criteria_id,
-            $average,
-            $weighted_grade,
-            $grade_period
-        );
-
-        if (!$grade_report_id) {
-            echo json_encode([
-                'status' => 'error',
-                'message' => 'Failed to save grade report'
-            ]);
-            return;
-        }
-
-        $this->Record_score_model->update_score_grade_report($score_id, $grade_report_id);
-
+    if ($success_count > 0) {
         echo json_encode([
-            'status'          => 'success',
-            'message'         => 'Score and grade report saved successfully',
-            'score_id'        => $score_id,
-            'grade_report_id' => $grade_report_id
+            'status' => 'success',
+            'message' => 'All scores saved successfully',
+            'count' => $success_count
+        ]);
+    } else {
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Failed to save scores'
         ]);
     }
+}
+public function getStudentScore()
+{
+    $schedule_id = $this->input->get('schedule_id');
+    $criteria_id = $this->input->get('criteria_id');
+    $grade_period = $this->input->get('grade_period');
 
-    public function getStudentScore() {
-        $schedule_id = $this->input->get('schedule_id');
-        $criteria_id = $this->input->get('criteria_id');
-        $grade_period = $this->input->get('grade_period');
-        
-        $students = $this->Students_model->get_students_with_scores(
-            $schedule_id, 
-            $criteria_id, 
-            $grade_period
-        );
-        
-        echo json_encode($students);
-    }
+    $students = $this->Students_model->get_students_with_scores(
+        $schedule_id,
+        $criteria_id,
+        $grade_period
+    );
+
+    echo json_encode($students);
+}
+
 
     public function get_grade_reports()
     {
@@ -905,6 +1043,37 @@ class Api extends CI_Controller
         $data = $this->Grade_report_model->getGradeReportBySchedule($schedule_id);
 
         echo json_encode($data);
+    }
+
+    //edit
+     public function updateCriteria()
+    {
+        $id       = $this->input->post("id");
+        $criteria = $this->input->post("criteria");
+        $weight   = $this->input->post("weight");
+        if (!$id || !$criteria || !$weight ) {
+            echo json_encode([
+                "status" => false,
+                "message" => "Invalid input"
+            ]);
+            return;
+        }
+
+        $this->load->model("Criteria_model");
+
+        $update = $this->Criteria_model->updateCriteria($id, [
+            "criteria" => $criteria,
+            "weight"   => $weight
+        ]);
+
+        if ($update) {
+            echo json_encode(["status" => true]);
+        } else {
+            echo json_encode([
+                "status" => false,
+                "message" => "No changes were made"
+            ]);
+        }
     }
 
 }

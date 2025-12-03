@@ -40,4 +40,12 @@ class Criteria_model extends CI_Model
         return $query->result_array();
     }
 
+       public function updateCriteria($id, $data)
+    {
+        $this->db->where("id", $id);
+        $this->db->update("tbl_subject_criteria", $data);
+
+        return $this->db->affected_rows() > 0;
+    }
+
 }

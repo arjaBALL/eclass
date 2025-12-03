@@ -148,6 +148,10 @@ $(document).ready(function () {
 
 		if (grades.length > 0) {
 			$.each(grades, function (i, grade) {
+				// Determine badge class for Bootstrap 5
+				let badgeClass =
+					grade.remarks === "Passed" ? "text-bg-success" : "text-bg-danger";
+
 				html += `
             <tr>
                 <td>${i + 1}</td>
@@ -155,7 +159,9 @@ $(document).ready(function () {
                 <td>${parseFloat(grade.midterm_grade).toFixed(2)}</td>
                 <td>${parseFloat(grade.final_grade).toFixed(2)}</td>
                 <td>${parseFloat(grade.final_rating).toFixed(2)}</td>
-                <td>${parseFloat(grade.final_rating).toFixed(2)}</td>
+                <td><span class="badge ${badgeClass}">${
+					grade.remarks
+				}</span></td>
             </tr>`;
 			});
 		} else {

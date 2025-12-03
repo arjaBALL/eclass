@@ -90,8 +90,8 @@ $(document).ready(function () {
 					response.forEach((c) => {
 						html += `
                         <div class="border rounded p-2 px-2 mb-2">
-                            <div class="row">
-                                <div class="col-7">
+                            <div class="row gap-2">
+                                <div class="col-9">
                                     <div class="row">
                                         <div>${c.criteria}</div>
                                         <div class="col" style="font-size:10px;">
@@ -101,13 +101,21 @@ $(document).ready(function () {
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-5 d-flex justify-content-center align-items-center">
-                                    <button type="button" class="btn btn-primary btn-sm manageBtn" 
+                                <div class="col-1 d-flex justify-content-center align-items-center">
+                                    <button type="button" class="btn btn-success btn-sm manageBtn" 
                                         data-criteria-id="${c.id}" 
                                         data-criteria-weight="${
 																					c.weight
-																				}">Manage</button>
+																				}"><i class="fa-solid fa-list-check"></i></button>
                                 </div>
+								<div class="col-1 d-flex justify-content-center align-items-center">
+								<button type="button" class="btn btn-warning btn-sm editBtn" 
+									data-criteria-id="${c.id}" 
+									data-criteria-name="${c.criteria}"
+									data-criteria-weight="${c.weight}">
+									<i class="fa-solid fa-pen-to-square"></i>
+								</button>
+								</div>
                             </div>
                         </div>
                     `;
@@ -132,6 +140,106 @@ $(document).ready(function () {
 			},
 		});
 	}
+
+	$(document).on("click", ".editBtn", function () {
+		const id = $(this).data("criteria-id");
+		const name = $(this).data("criteria-name");
+		const weight = $(this).data("criteria-weight");
+
+		const currentTotalWeight = calculateTotalWeight();
+		const otherCriteriaWeight = currentTotalWeight - parseFloat(weight);
+		const availableWeight = 100 - otherCriteriaWeight;
+
+		$("#editCriteriaId").val(id);
+		$("#editCriteriaName").val(name);
+		$("#editCriteriaWeight").val(weight);
+		$("#editCriteriaWeight").attr("max", availableWeight);
+		$("#editCriteriaWeight").data("original-weight", weight);
+		$("#editCriteriaWeight").data("other-weight", otherCriteriaWeight);
+		$("#editCriteriaWeight").data("available-weight", availableWeight);
+
+		const modal = new bootstrap.Modal(
+			document.getElementById("editCriteriaModal")
+		);
+		modal.show();
+	});
+
+	$("#saveEditCriteria").click(function () {
+		const id = $("#editCriteriaId").val();
+		const name = $("#editCriteriaName").val().trim();
+		const newWeight = parseFloat($("#editCriteriaWeight").val());
+		const availableWeight = parseFloat(
+			$("#editCriteriaWeight").data("available-weight")
+		);
+
+		if (!name || !newWeight) {
+			Swal.fire({
+				icon: "warning",
+				title: "Incomplete",
+				text: "Please fill in all fields",
+			});
+			return;
+		}
+
+		if (newWeight > availableWeight) {
+			Swal.fire({
+				icon: "error",
+				title: "Weight Limit Exceeded!",
+				text: `Cannot update criteria. Maximum available weight is ${availableWeight.toFixed(
+					2
+				)}%. You entered ${newWeight}%.`,
+				confirmButtonText: "OK",
+			});
+			return;
+		}
+
+		$.ajax({
+			url: BASE_URL + "index.php/Api/updateCriteria",
+			type: "POST",
+			dataType: "json",
+			data: {
+				id: id,
+				criteria: name,
+				weight: newWeight,
+			},
+			beforeSend: function () {
+				$("#saveEditCriteria").prop("disabled", true).text("Saving...");
+			},
+			success: function (response) {
+				if (response.status === true) {
+					const modal = bootstrap.Modal.getInstance(
+						document.getElementById("editCriteriaModal")
+					);
+					modal.hide();
+					Swal.fire({
+						icon: "success",
+						title: "Updated!",
+						text: "Criteria updated successfully",
+						timer: 1500,
+						showConfirmButton: false,
+					}).then(() => {
+						fetchCriteria(currentScheduleId, currentGradePeriod);
+					});
+				} else {
+					Swal.fire({
+						icon: "error",
+						title: "Update Failed",
+						text: response.message || "Something went wrong",
+					});
+				}
+			},
+			error: function () {
+				Swal.fire({
+					icon: "error",
+					title: "Server Error",
+					text: "Please try again",
+				});
+			},
+			complete: function () {
+				$("#saveEditCriteria").prop("disabled", false).text("Save Changes");
+			},
+		});
+	});
 
 	// New function to calculate total weight for current grading period
 	function calculateTotalWeight() {
@@ -324,10 +432,32 @@ $(document).ready(function () {
 		$("#subjectScheduleData").empty();
 
 		let allColIndexes = new Set();
+		let colIndexItems = {}; // Store items per column
+
+		// ← ADD: Get criteria_items from first student
+		const criteriaItems =
+			students.length > 0 && students[0].criteria_items
+				? parseInt(students[0].criteria_items)
+				: selectedCriteria.items || 0;
+
+		console.log("Criteria Items from DB:", criteriaItems);
+
 		students.forEach((s) => {
 			if (s.scores && s.scores.length > 0) {
 				s.scores.forEach((score) => {
 					allColIndexes.add(score.col_index);
+					// Store the total_items for this col_index
+					// ← UPDATED: Use criteria_items as fallback when total_items is 0 or null
+					if (
+						score.total_items !== null &&
+						score.total_items !== undefined &&
+						score.total_items > 0
+					) {
+						colIndexItems[score.col_index] = score.total_items;
+					} else {
+						// Use criteria items as fallback
+						colIndexItems[score.col_index] = criteriaItems;
+					}
 				});
 			}
 		});
@@ -349,21 +479,31 @@ $(document).ready(function () {
 
 		let itemsRow = `<tr class="itemsRow"><td>Items</td>`;
 		colIndexArray.forEach((colIndex) => {
+			// ← UPDATED: Use colIndexItems which now has proper fallback
+			const itemsValue = colIndexItems[colIndex] || criteriaItems || 0;
+
 			itemsRow += `
             <td class="score-column">
                 <input type="number" class="form-control colItems" 
                     data-col-index="${colIndex}" 
-                    value="${selectedCriteria.items || 0}" 
+                    value="${itemsValue}" 
                     placeholder="Items">
             </td>`;
 		});
 
-		let totalItems = (selectedCriteria.items || 0) * colIndexArray.length;
+		// Calculate total items
+		let totalItems = 0;
+		colIndexArray.forEach((colIndex) => {
+			const itemsValue = colIndexItems[colIndex] || criteriaItems || 0;
+			totalItems += itemsValue;
+		});
+
 		itemsRow += `<td class="summary-column totalItemsHeader">${totalItems}</td>`;
 		itemsRow += `<td class="summary-column itemsAverage">1.0</td>`;
 		itemsRow += `<td class="summary-column itemsWeighted">0.00</td></tr>`;
 		$("#subjectScheduleData").html(itemsRow);
 
+		// Rest of your student rows code remains the same...
 		students.forEach((s) => {
 			let row = `<tr data-student-id="${s.id}"><td>${s.fullname}</td>`;
 
@@ -575,10 +715,12 @@ $(document).ready(function () {
         </div>
     `);
 	}
-
 	$(document).on("click", "#saveScoresBtn", function () {
 		const dataToSave = [];
 
+		console.log("=== SAVE ALL SCORES ===");
+
+		// Collect all student scores
 		$("#subjectScheduleData tr")
 			.not(".itemsRow")
 			.each(function () {
@@ -595,6 +737,18 @@ $(document).ready(function () {
 						const score = $(this).val();
 
 						if (score !== "") {
+							// Get the items for THIS SPECIFIC COLUMN
+							const itemsForThisColumn =
+								parseFloat(
+									$(
+										`.itemsRow input.colItems[data-col-index="${colIndex}"]`
+									).val()
+								) || 0;
+
+							console.log(
+								`Column ${colIndex} - Score: ${score}, Items: ${itemsForThisColumn}`
+							);
+
 							dataToSave.push({
 								student_id: studentId,
 								col_index: colIndex,
@@ -602,11 +756,15 @@ $(document).ready(function () {
 								total_score: totalScore,
 								average: average,
 								weighted_grade: weighted,
+								total_items: itemsForThisColumn, // Items for this specific column
 							});
 						}
 					});
 			});
 
+		console.log("Data to save:", dataToSave);
+
+		// Send AJAX request
 		$.ajax({
 			url: BASE_URL + "index.php/Api/saveAllStudentScores",
 			type: "POST",
@@ -616,7 +774,8 @@ $(document).ready(function () {
 				grade_period: currentGradePeriod,
 				scores: dataToSave,
 			},
-			success: function () {
+			success: function (response) {
+				console.log("Save response:", response);
 				Swal.fire({
 					icon: "success",
 					title: "Scores Saved!",
@@ -627,7 +786,9 @@ $(document).ready(function () {
 					confirmButtonText: "OK",
 				});
 			},
-			error: function () {
+			error: function (xhr, status, error) {
+				console.error("Save error:", error);
+				console.error("Response:", xhr.responseText);
 				Swal.fire({
 					icon: "error",
 					title: "Error",
@@ -652,6 +813,17 @@ $(document).ready(function () {
 		const average = parseFloat($row.find("td.average").text()) || 0;
 		const weighted = parseFloat($row.find("td.weighted").text()) || 0;
 
+		// Get the items for THIS SPECIFIC COLUMN (not total)
+		const itemsForThisColumn =
+			parseFloat(
+				$(`.itemsRow input.colItems[data-col-index="${colIndex}"]`).val()
+			) || 0;
+
+		console.log(
+			`Saving score for column ${colIndex} - Items for this column:`,
+			itemsForThisColumn
+		);
+
 		if (score !== "") {
 			$.ajax({
 				url: BASE_URL + "index.php/Api/saveStudentScoreColumn",
@@ -666,12 +838,14 @@ $(document).ready(function () {
 					total_score: totalScore,
 					average: average,
 					weighted_grade: weighted,
+					total_items: itemsForThisColumn, // Items for this specific column only
 				},
-				success: function () {
-					console.log("Score saved successfully");
+				success: function (response) {
+					console.log("Score saved successfully:", response);
 				},
-				error: function () {
-					console.error("Failed to save score");
+				error: function (xhr, status, error) {
+					console.error("Failed to save score:", error);
+					console.error("Response:", xhr.responseText);
 				},
 			});
 		}

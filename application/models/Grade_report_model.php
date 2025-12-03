@@ -37,7 +37,14 @@ class Grade_report_model extends CI_Model
                         THEN gr.weighted_grade 
                         ELSE 0 
                     END)
-                ) / 2 AS final_rating
+                ) / 2 AS final_rating,
+
+                /* Remarks based on Final Grade */
+                CASE 
+                    WHEN SUM(CASE WHEN gp.grading_period = 'Finals' THEN gr.weighted_grade ELSE 0 END) > 3.0 
+                        THEN 'Failed'
+                    ELSE 'Passed'
+                END AS remarks
 
             FROM tbl_scores sc
 
@@ -56,7 +63,7 @@ class Grade_report_model extends CI_Model
             WHERE sc.schedule_id = ?
 
             GROUP BY s.id, sc.schedule_id
-            ORDER BY final_rating DESC
+            ORDER BY final_rating ASC
         ";
 
         return $this->db->query($sql, [$schedule_id])->result();

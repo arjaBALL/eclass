@@ -31,7 +31,7 @@ class Criteria_model extends CI_Model
 
     public function get_students_by_schedule_criteria($schedule_id, $criteria_id)
     {
-        $this->db->select("st.id, CONCAT(st.lastname, ', ', st.firstname) AS fullname, s.score");
+        $this->db->select("st.id, CONCAT(st.lastname, ', ', st.firstname) AS fullname, s.score, s.total_items");
         $this->db->from("tbl_student_schedules ss");
         $this->db->join("tbl_student st", "st.id = ss.student_id");
         $this->db->join("tbl_scores s", "s.student_id = st.id AND s.schedule_id = ss.schedule_id AND s.criteria_id = " . (int) $criteria_id, "left");

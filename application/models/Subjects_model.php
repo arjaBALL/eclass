@@ -3,11 +3,11 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Subjects_model extends CI_Model
 {
-    public function validate_data($subject, $subjectCode, $departmentSelect, $statusSelect)
+    public function validate_data($subject, $subjectCode, $programSelect, $statusSelect)
     {
         $this->db->where('subject_name', $subject);
         $this->db->where('subject_code', $subjectCode);
-        $this->db->where('department_id', $departmentSelect);
+        $this->db->where('program_id', $programSelect);
         $this->db->where('status_id', $statusSelect);
         $query = $this->db->get('tbl_subjects');
 
@@ -39,5 +39,15 @@ class Subjects_model extends CI_Model
         return $this->db->get()->result();
     }
 
+    public function update_subject($id, $data) {
+    $this->db->where('id', $id);
+    return $this->db->update('tbl_subjects', $data);
 }
 
+public function delete_subject($id) {
+    $this->db->where('id', $id);
+    return $this->db->delete('tbl_subjects');
+}
+
+
+}

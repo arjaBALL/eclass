@@ -20,6 +20,8 @@
                 </div>
                 <form id="subjectForm">
                     <div class="modal-body">
+                        <input type="hidden" id="subject_id" name="subject_id">
+
                         <div class="row">
                             <div class="mb-2">
                                 <label for="subject" class="form-label"><small>Subject</small></label>
@@ -41,8 +43,8 @@
                                     <select id="programSelect" name="programSelect" class="form-select form-select-sm">
                                         <option value="">Choose:</option>
                                         <?php foreach ($programs as $program): ?>
-                                            <option value="<?= $program['id'] ?>"><?= $program['program_name'] ?>
-                                            </option>
+                                        <option value="<?= $program['id'] ?>"><?= $program['program_name'] ?>
+                                        </option>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
@@ -55,8 +57,8 @@
                                     <select id="statusSelect" name="statusSelect" class="form-select form-select-sm">
                                         <option value="">Choose:</option>
                                         <?php foreach ($statuses as $status): ?>
-                                            <option value="<?= $status['id'] ?>"><?= $status['status'] ?>
-                                            </option>
+                                        <option value="<?= $status['id'] ?>"><?= $status['status'] ?>
+                                        </option>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
@@ -80,8 +82,8 @@
             <select id="filterProgramSelect" name="filterProgramSelect" class="form-select form-select-sm">
                 <option value="">Choose:</option>
                 <?php foreach ($programs as $program): ?>
-                    <option value="<?= $program['id'] ?>"><?= $program['program_name'] ?>
-                    </option>
+                <option value="<?= $program['id'] ?>"><?= $program['program_name'] ?>
+                </option>
                 <?php endforeach; ?>
             </select>
         </div>
@@ -93,8 +95,8 @@
             <select id="filterStatusSelect" name="filterStatusSelect" class="form-select form-select-sm">
                 <option value="">Choose:</option>
                 <?php foreach ($statuses as $status): ?>
-                    <option value="<?= $status['id'] ?>"><?= $status['status'] ?>
-                    </option>
+                <option value="<?= $status['id'] ?>"><?= $status['status'] ?>
+                </option>
                 <?php endforeach; ?>
             </select>
         </div>

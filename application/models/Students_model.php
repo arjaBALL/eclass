@@ -47,26 +47,40 @@ class Students_model extends CI_Model
         return $query->result();
     }
 
-    public function get_students_with_scores($schedule_id, $criteria_id, $grade_period) {
-        $students = $this->get_students_by_schedule($schedule_id);
+public function get_students_with_scores($schedule_id, $criteria_id, $grade_period) {
+    $students = $this->get_students_by_schedule($schedule_id);
+    
+    foreach ($students as &$student) {
+        // Fetch student scores including total_items
+        $student->scores = $this->get_student_scores_with_items(
+            $student->id, 
+            $schedule_id, 
+            $criteria_id
+        );
         
-        foreach ($students as &$student) {
-            $student->scores = $this->get_student_scores(
-                $student->id, 
-                $schedule_id, 
-                $criteria_id
-            );
-            
-            $student->grade_report = $this->get_student_grade_report(
-                $student->id, 
-                $schedule_id, 
-                $criteria_id, 
-                $grade_period
-            );
-        }
-        
-        return $students;
+        $student->grade_report = $this->get_student_grade_report(
+            $student->id, 
+            $schedule_id, 
+            $criteria_id, 
+            $grade_period
+        );
     }
+    
+    return $students;
+}
+
+// Modified function to include total_items
+public function get_student_scores_with_items($student_id, $schedule_id, $criteria_id) {
+    $this->db->select("score, col_index, total_items, total_score");
+    $this->db->from("tbl_scores");
+    $this->db->where("student_id", $student_id);
+    $this->db->where("schedule_id", $schedule_id);
+    $this->db->where("criteria_id", $criteria_id);
+    
+    $query = $this->db->get();
+    return $query->result();
+}
+
 
     public function get_students_by_schedule($schedule_id) {
         return $this->db->select('s.id, CONCAT(s.firstname, " ", s.lastname) as fullname')
@@ -98,4 +112,21 @@ class Students_model extends CI_Model
             ->get()
                  ->row_array();
     }
+
+    public function getStudentById($id)
+{
+    return $this->db->where('id', $id)
+        ->get('tbl_student')
+        ->row_array();
+}
+
+public function updateStudent($id, $data)
+{
+    return $this->db->where('id', $id)->update('tbl_student', $data);
+}
+
+public function deleteStudent($id)
+{
+    return $this->db->where('id', $id)->delete('tbl_student');
+}
 }
