@@ -78,6 +78,59 @@
         </div>
     </div>
 
+    <!-- Edit Subject Assignment Modal -->
+    <div class="modal fade" id="editSubjectAssignmentModal" tabindex="-1"
+        aria-labelledby="editSubjectAssignmentModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editSubjectAssignmentModalLabel">Edit Subject Assignment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="editSubjectAssignmentForm">
+                    <div class="modal-body">
+                        <input type="hidden" id="editSubjectAssignmentId" name="editSubjectAssignmentId">
+                        <div class="mb-2">
+                            <label for="editSubjectSelect" class="form-label"><small>Subject</small></label>
+                            <select id="editSubjectSelect" name="subjectAssignmentSelect"
+                                class="form-select form-select-sm">
+                                <option value="">Choose:</option>
+                                <?php foreach ($subjects as $subject): ?>
+                                <option value="<?= $subject['id'] ?>"><?= $subject['subject_code'] ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <label for="editTeacherSelect" class="form-label"><small>Teacher</small></label>
+                            <select id="editTeacherSelect" name="teacherSelect" class="form-select form-select-sm">
+                                <option value="">Choose:</option>
+                                <?php foreach ($teachers as $teacher): ?>
+                                <option value="<?= $teacher['id'] ?>">
+                                    <?= $teacher['lastname'] . ', ' . $teacher['firstname'] . ' ' . $teacher['middlename'] ?>
+                                </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <label for="editSemesterSelect" class="form-label"><small>Semester</small></label>
+                            <select id="editSemesterSelect" name="semesterSelect" class="form-select form-select-sm">
+                                <option value="">Choose:</option>
+                                <?php foreach ($semesters as $semester): ?>
+                                <option value="<?= $semester['id'] ?>"><?= $semester['semester'] ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Update Assignment</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
     <div class="row">
         <div class="mb-3 col-2">
             <label for="filterTeacherSelect" class="form-label mb-0">

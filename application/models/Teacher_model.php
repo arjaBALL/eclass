@@ -29,6 +29,7 @@ class Teacher_model extends CI_Model
             r.role,
             t.department_id,
             t.status_id,
+            t.password,
             d.department,
             st.id,
             st.status"
@@ -42,6 +43,35 @@ class Teacher_model extends CI_Model
         return $query->result();
     }
 
+public function get_teacher($id) {
+    $this->db->select(
+        "t.id,
+         t.teacher_school_id,
+         t.lastname,
+         t.firstname,
+         t.middlename,
+         t.role_id,
+         r.role,
+         t.department_id,
+         t.status_id,
+         t.password,
+         d.department,
+         st.status"
+    );
+    $this->db->from('tbl_teachers t');
+    $this->db->join('tbl_departments d', 'd.id = t.department_id', 'left');
+    $this->db->join('tbl_user_role r', 'r.id = t.role_id', 'left');
+    $this->db->join('tbl_status st', 'st.id = t.status_id', 'left');
+    $this->db->where('t.id', $id);
+    $teacher = $this->db->get()->row();
+
+    if ($teacher) {
+        $teacher->password = $this->encryption->decrypt($teacher->password); // decrypt password
+    }
+
+    return $teacher;
+}
+
     public function validate_user_login($username, $password){
        $query = $this->db->get_where('tbl_teachers', [
             'teacher_school_id' => $username,
@@ -54,5 +84,15 @@ class Teacher_model extends CI_Model
         } else {
             return false;
         }
+    }
+
+    public function update_teacher($id, $data) {
+        $this->db->where('id', $id);
+        return $this->db->update('tbl_teachers', $data);
+    }
+
+    public function delete_teacher($id) {
+        $this->db->where('id', $id);
+        return $this->db->delete('tbl_teachers');
     }
 }

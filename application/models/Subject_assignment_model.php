@@ -47,5 +47,29 @@ class Subject_assignment_model extends CI_Model
         return $query->result();
     }
 
+    public function get_assignment($id) {
+        $this->db->where('id', $id);
+        return $this->db->get('tbl_subject_assignments')->row_array();
+    }
+
+    public function check_duplicate_edit($id, $subject_id, $teacher_id) {
+    $this->db->where('subject_id', $subject_id);
+    $this->db->where('teacher_id', $teacher_id);
+    $this->db->where('id !=', $id);
+    $query = $this->db->get('tbl_subject_assignments');
+    return $query->num_rows() > 0;
+}
+
+public function update_assignment($id, $data) {
+    $this->db->where('id', $id);
+    return $this->db->update('tbl_subject_assignments', $data);
+}
+
+
+    // Delete assignment
+    public function delete_assignment($id) {
+        $this->db->where('id', $id);
+        return $this->db->delete('tbl_subject_assignments');
+    }
 
 }

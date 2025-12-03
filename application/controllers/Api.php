@@ -7,6 +7,8 @@ class Api extends CI_Controller
     {
         parent::__construct();
         $this->load->database();
+        $this->load->library('encryption');
+
         $this->load->library('session');
         $this->load->model('Students_model');
         $this->load->model('Subjects_model');
@@ -41,12 +43,26 @@ class Api extends CI_Controller
         echo json_encode($teachers);
     }
 
+    public function get_teacher($id)
+{
+    $this->load->model('Teacher_model');
+    $teacher = $this->Teacher_model->get_teacher($id);
+    if ($teacher) {
+        echo json_encode($teacher);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Teacher not found']);
+    }
+}
+
+
     public function get_sections()
     {
         header('Content-Type: application/json');
         $sections = $this->Sections_model->get_all_sections();
         echo json_encode($sections);
     }
+
+    
 
     public function get_departments()
     {
@@ -123,38 +139,38 @@ class Api extends CI_Controller
 }
 
 // UPDATE STUDENT
-public function updateStudent()
-{
-    $id = $this->input->post('student_id');
+    public function updateStudent()
+    {
+        $id = $this->input->post('student_id');
 
-    $data = [
-        'lastname' => $this->input->post('lastName'),
-        'firstname' => $this->input->post('firstName'),
-        'middlename' => $this->input->post('middleName'),
-        'year_level_id' => $this->input->post('yearSelect'),
-        'program_id' => $this->input->post('programSelect'),
-        'section_id' => $this->input->post('sectionSelect'),
-        'status' => $this->input->post('statusSelect')
-    ];
+        $data = [
+            'lastname' => $this->input->post('lastName'),
+            'firstname' => $this->input->post('firstName'),
+            'middlename' => $this->input->post('middleName'),
+            'year_level_id' => $this->input->post('yearSelect'),
+            'program_id' => $this->input->post('programSelect'),
+            'section_id' => $this->input->post('sectionSelect'),
+            'status' => $this->input->post('statusSelect')
+        ];
 
-    if ($this->Students_model->updateStudent($id, $data)) {
-        echo json_encode(['status' => 'success', 'message' => 'Student updated successfully']);
-    } else {
-        echo json_encode(['status' => 'error', 'message' => 'Update failed']);
+        if ($this->Students_model->updateStudent($id, $data)) {
+            echo json_encode(['status' => 'success', 'message' => 'Student updated successfully']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Update failed']);
+        }
     }
-}
 
 // DELETE STUDENT
-public function deleteStudent()
-{
-    $id = $this->input->post('id');
+    public function deleteStudent()
+    {
+        $id = $this->input->post('id');
 
-    if ($this->Students_model->deleteStudent($id)) {
-        echo json_encode(['status' => 'success', 'message' => 'Student deleted successfully']);
-    } else {
-        echo json_encode(['status' => 'error', 'message' => 'Delete failed']);
+        if ($this->Students_model->deleteStudent($id)) {
+            echo json_encode(['status' => 'success', 'message' => 'Student deleted successfully']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Delete failed']);
+        }
     }
-}
 
     public function addStudent()
     {
@@ -388,20 +404,34 @@ public function deleteStudent()
         }
     }
 
-    public function editTeacher($id)
-    {
+     public function update_teacher($id) {
+        $teacherSchoolId = $this->input->post('editTeacherSchoolId');
+        $lastName = $this->input->post('editLastName');
+        $firstName = $this->input->post('editFirstName');
+        $middleName = $this->input->post('editMiddleName');
+        $role = $this->input->post('editTeacherRoleSelect');
+        $department = $this->input->post('editDepartmentSelect');
+        $status = $this->input->post('editStatusSelect');
+        $password = $this->input->post('editPassword');
+
+        if (empty($lastName) || empty($firstName) || empty($middleName) || empty($teacherSchoolId) || empty($role) || empty($department)) {
+            echo json_encode(['status' => 'error', 'message' => 'All fields required']);
+            return;
+        }
+
         $data = [
-            'teacher_school_id' => $this->input->post('teacherSchoolId'),
-            'lastname' => $this->input->post('lastName'),
-            'firstname' => $this->input->post('firstName'),
-            'middlename' => $this->input->post('middleName'),
-            'department_id' => $this->input->post('departmentSelect'),
-            'status_id' => $this->input->post('statusSelect'),
-            'role_id' => $this->input->post('teacherRoleSelect'),
+            'teacher_school_id' => $teacherSchoolId,
+            'lastname' => $lastName,
+            'firstname' => $firstName,
+            'middlename' => $middleName,
+            'role_id' => $role,
+            'department_id' => $department,
+            'status_id' => $status
         ];
 
-        if (!empty($this->input->post('password'))) {
-            $data['password'] = password_hash($this->input->post('password'), PASSWORD_DEFAULT);
+        // Only update password if provided
+        if (!empty($password)) {
+            $data['password'] = password_hash($password, PASSWORD_DEFAULT);
         }
 
         $updated = $this->Teacher_model->update_teacher($id, $data);
@@ -409,18 +439,17 @@ public function deleteStudent()
         if ($updated) {
             echo json_encode(['status' => 'success']);
         } else {
-            echo json_encode(['status' => 'error', 'message' => 'Update failed.']);
+            echo json_encode(['status' => 'error', 'message' => 'Failed to update teacher']);
         }
     }
 
-    public function deleteTeacher($id)
-    {
+    // Delete teacher
+    public function delete_teacher($id) {
         $deleted = $this->Teacher_model->delete_teacher($id);
-
         if ($deleted) {
-            echo json_encode(['status' => 'success']);
+            echo json_encode(['status' => 'success', 'message' => 'Teacher deleted successfully']);
         } else {
-            echo json_encode(['status' => 'error', 'message' => 'Delete failed.']);
+            echo json_encode(['status' => 'error', 'message' => 'Failed to delete teacher']);
         }
     }
     public function get_subjectAssignments()
@@ -465,6 +494,44 @@ public function deleteStudent()
         }
     }
 
+    public function get_section($id) {
+        // Load model with proper name
+    
+        $section = $this->Sections_model->get_section($id); // use correct model reference
+
+        if($section) {
+            echo json_encode($section);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Section not found']);
+        }
+    }
+
+    // Update section
+    public function update_section($id) {
+    // load model
+
+        $data = [
+            'section' => $this->input->post('section'),
+            'program_id' => $this->input->post('programSelect')
+        ];
+
+        if($this->Sections_model->update_section($id, $data)) {
+            echo json_encode(['status' => 'success', 'message' => 'Section updated successfully']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Failed to update section']);
+        }
+    }
+
+    // Delete section
+    public function delete_section($id) {
+    // load model
+
+        if($this->Sections_model->delete_section($id)) {
+            echo json_encode(['status' => 'success', 'message' => 'Section deleted successfully']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Failed to delete section']);
+        }
+    }
     public function addDepartments()
     {
         $department = $this->input->post('department');
@@ -487,7 +554,7 @@ public function deleteStudent()
 
         $data = [
             'department' => $department,
-            'status_id' => $statusSelect,
+            'status' => $statusSelect,
         ];
 
         $insertData = $this->Department_model->insert_departments($data);
@@ -498,6 +565,55 @@ public function deleteStudent()
             echo json_encode(['status' => 'error', 'message' => 'Failed to insert department']);
         }
     }
+
+    public function get_department($id)
+{
+    $this->load->model('Department_model');
+    $department = $this->Department_model->get_department($id);
+    if($department) {
+        echo json_encode($department);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Department not found']);
+    }
+}
+
+
+// Update department
+public function update_department($id)
+{
+    $this->load->model('Department_model');
+
+    $department = $this->input->post('department');
+    $status = $this->input->post('statusSelect');
+
+    if($this->Department_model->validate_data($department, $status, $id)) {
+        echo json_encode(['status' => 'error', 'message' => 'Department already exists']);
+        return;
+    }
+
+    $data = [
+        'department' => $department,
+        'status' => $status
+    ];
+
+    if($this->Department_model->update_department($id, $data)) {
+        echo json_encode(['status' => 'success', 'message' => 'Department updated successfully']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Failed to update department']);
+    }
+}
+
+// Delete department
+public function delete_department($id)
+{
+    $this->load->model('Department_model');
+
+    if($this->Department_model->delete_department($id)) {
+        echo json_encode(['status' => 'success', 'message' => 'Department deleted successfully']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Failed to delete department']);
+    }
+}
 
     public function addSubjectAssignments()
     {
@@ -533,6 +649,58 @@ public function deleteStudent()
             echo json_encode(['status' => 'success']);
         } else {
             echo json_encode(['status' => 'error', 'message' => 'Failed to insert subject']);
+        }
+    }
+
+    public function get_subjectAssignment($id) {
+        $assignment = $this->Subject_assignment_model->get_assignment($id);
+        if($assignment) {
+            echo json_encode($assignment);
+        } else {
+            echo json_encode(['status'=>'error','message'=>'Assignment not found']);
+        }
+    }
+
+    // Update assignment
+public function update_subjectAssignment($id) {
+    $subject_id = $this->input->post('subjectAssignmentSelect');
+    $teacher_id = $this->input->post('teacherSelect');
+    $semester_id = $this->input->post('semesterSelect');
+
+    $this->load->model('Subject_assignment_model');
+
+    // Check if subject + teacher combination exists in other records
+    $exists = $this->Subject_assignment_model->check_duplicate_edit($id, $subject_id, $teacher_id);
+
+    if($exists) {
+        // Allow editing semester only
+        $data = ['semester_id' => $semester_id];
+    } else {
+        $data = [
+            'subject_id' => $subject_id,
+            'teacher_id' => $teacher_id,
+            'semester_id' => $semester_id
+        ];
+    }
+
+    $updated = $this->Subject_assignment_model->update_assignment($id, $data);
+
+    if($updated) {
+        echo json_encode(['status'=>'success','message'=>'Assignment updated successfully']);
+    } else {
+        echo json_encode(['status'=>'error','message'=>'Failed to update assignment']);
+    }
+}
+
+
+    // Delete assignment
+    public function delete_subjectAssignment($id) {
+        $deleted = $this->Subject_assignment_model->delete_assignment($id);
+
+        if($deleted) {
+            echo json_encode(['status'=>'success','message'=>'Assignment deleted successfully']);
+        } else {
+            echo json_encode(['status'=>'error','message'=>'Failed to delete assignment']);
         }
     }
 

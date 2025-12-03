@@ -31,5 +31,21 @@ class Sections_model extends CI_Model
         return $this->db->get()->result();
     }
 
-}
+       public function get_section($id) {
+        $this->db->where('id', $id);
+        $query = $this->db->get('tbl_sections');
+        return $query->row_array();
+    }
 
+      public function update_section($id, $data) {
+        $this->db->where('id', $id);
+        return $this->db->update('tbl_sections', $data);
+    }
+
+    // Delete section by ID
+    public function delete_section($id) {
+        $this->db->where('id', $id);
+        return $this->db->delete('tbl_sections');
+    }
+
+}

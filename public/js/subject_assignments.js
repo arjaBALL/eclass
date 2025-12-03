@@ -123,6 +123,65 @@ $(document).ready(function () {
 		// setupTable("users", "searchUsers", [10, 25, 50, 100], 10);
 	}
 
+	// Open Edit Modal
+	$(document).on("click", ".editSubjectAssignments", function () {
+		const assignmentId = $(this).data("id");
+
+		$.ajax({
+			url: BASE_URL + "index.php/Api/get_subjectAssignment/" + assignmentId,
+			type: "GET",
+			dataType: "json",
+			success: function (data) {
+				if (data.status === "error") {
+					Swal.fire("Error!", data.message, "error");
+					return;
+				}
+
+				$("#editSubjectAssignmentId").val(data.id);
+				$("#editSubjectSelect").val(data.subject_id);
+				$("#editTeacherSelect").val(data.teacher_id);
+				$("#editSemesterSelect").val(data.semester_id);
+
+				const modal = new bootstrap.Modal(
+					document.getElementById("editSubjectAssignmentModal")
+				);
+				modal.show();
+			},
+			error: function (xhr) {
+				console.error(xhr.responseText);
+				Swal.fire("Error!", "Failed to fetch assignment data.", "error");
+			},
+		});
+	});
+
+	// Submit Edit Form
+	$("#editSubjectAssignmentForm").submit(function (e) {
+		e.preventDefault();
+		const assignmentId = $("#editSubjectAssignmentId").val();
+		const formData = $(this).serialize();
+
+		$.ajax({
+			url: BASE_URL + "index.php/Api/update_subjectAssignment/" + assignmentId,
+			type: "POST",
+			data: formData,
+			dataType: "json",
+			success: function (response) {
+				if (response.status === "success") {
+					Swal.fire("Success!", response.message, "success").then(() => {
+						$("#editSubjectAssignmentModal").modal("hide");
+						loadSubjectAssignments(); // reload table
+					});
+				} else {
+					Swal.fire("Error!", response.message, "error");
+				}
+			},
+			error: function (xhr) {
+				console.error(xhr.responseText);
+				Swal.fire("Error!", "AJAX error occurred.", "error");
+			},
+		});
+	});
+
 	$("#filterTeacherSelect, #filterSubjectSelect").on("change", function () {
 		renderSubjectAssignmentsTable(subjectAssignmentsData);
 	});

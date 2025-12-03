@@ -111,6 +111,87 @@ $(document).ready(function () {
 		// setupTable("users", "searchUsers", [10, 25, 50, 100], 10);
 	}
 
+	// Edit Department
+	$(document).on("click", ".editDepartments", function () {
+		const deptId = $(this).data("id");
+		$.ajax({
+			url: BASE_URL + "index.php/Api/get_department/" + deptId,
+			type: "GET",
+			dataType: "json",
+			success: function (data) {
+				$("#editDepartmentDbId").val(data.id);
+				$("#editDepartmentName").val(data.department);
+				$("#editStatusSelect").val(data.status);
+
+				const modal = new bootstrap.Modal(
+					document.getElementById("editDepartmentModal")
+				);
+				modal.show();
+			},
+			error: function (xhr) {
+				console.error("Fetch department error:", xhr.responseText);
+				Swal.fire("Error!", "Failed to fetch department data.", "error");
+			},
+		});
+	});
+
+	// Submit Edit Department
+	$("#editDepartmentForm").submit(function (e) {
+		e.preventDefault();
+		const deptId = $("#editDepartmentDbId").val();
+		$.ajax({
+			url: BASE_URL + "index.php/Api/update_department/" + deptId,
+			type: "POST",
+			data: $(this).serialize(),
+			dataType: "json",
+			success: function (response) {
+				if (response.status === "success") {
+					Swal.fire("Success!", "Department updated successfully.", "success");
+					$("#editDepartmentModal").modal("hide");
+					loadDepartments();
+				} else {
+					Swal.fire("Error!", response.message || "Update failed.", "error");
+				}
+			},
+			error: function (xhr) {
+				console.error(xhr.responseText);
+				Swal.fire("Error!", "AJAX error occurred.", "error");
+			},
+		});
+	});
+
+	// Delete Department
+	$(document).on("click", ".deleteDepartments", function () {
+		const deptId = $(this).data("id");
+		Swal.fire({
+			title: "Are you sure?",
+			text: "This action cannot be undone!",
+			icon: "warning",
+			showCancelButton: true,
+			confirmButtonText: "Yes, delete it!",
+		}).then((result) => {
+			if (result.isConfirmed) {
+				$.ajax({
+					url: BASE_URL + "index.php/Api/delete_department/" + deptId,
+					type: "POST",
+					dataType: "json",
+					success: function (response) {
+						if (response.status === "success") {
+							Swal.fire("Deleted!", response.message, "success");
+							loadDepartments();
+						} else {
+							Swal.fire("Error!", response.message, "error");
+						}
+					},
+					error: function (xhr) {
+						console.error(xhr.responseText);
+						Swal.fire("Error!", "AJAX error occurred.", "error");
+					},
+				});
+			}
+		});
+	});
+
 	$("#filterStatusSelect").on("change", function () {
 		renderDepartmentsTable(departmentsData);
 	});
