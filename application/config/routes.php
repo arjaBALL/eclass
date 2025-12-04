@@ -62,3 +62,11 @@ $route['department'] = 'main/department';
 $route['record_score'] = 'main/record_score';
 $route['class_record'] = 'main/class_record';
 $route['attendance'] = 'main/attendance';
+
+//
+// Add these routes to your application/config/routes.php
+
+$route['validate-face'] = 'FaceRecognition/validate_face';
+$route['register-face'] = 'FaceRecognition/register_face';
+$route['recognize-faces'] = 'FaceRecognition/recognize_faces';
+$route['mark-attendance'] = 'FaceRecognition/mark_attendance';

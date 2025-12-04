@@ -179,12 +179,19 @@ class Schedules_model extends CI_Model
     public function get_all_schedule_students($teacher_id)
     {
         $this->db->select("
-            ss.*,
-            CONCAT(st.lastname, ', ', st.firstname, ' ', IFNULL(st.middlename, '')) AS fullname,
-            se.section,
-            p.program_name,
-            sta.status
-        ");
+        ss.*,
+        st.id as student_id,
+        st.student_school_id,
+        st.firstname,
+        st.lastname,
+        st.middlename,
+        CONCAT(st.lastname, ', ', st.firstname, ' ', IFNULL(st.middlename, '')) AS fullname,
+        se.section,
+        se.id as section_id,
+        yl.year_level,
+        p.program_name,
+        sta.status
+    ");
         $this->db->from("tbl_student_schedules ss");
         $this->db->join("tbl_student st", "st.id = ss.student_id", "left");
         $this->db->join("tbl_year_levels yl", "yl.id = st.year_level_id", "left");
@@ -193,7 +200,15 @@ class Schedules_model extends CI_Model
         $this->db->join("tbl_student_status sta", "sta.id = ss.status_id", "left");
         $this->db->where('ss.schedule_id', $teacher_id);
         $this->db->order_by("st.lastname", "ASC");
-        return $this->db->get()->result();
+
+        $result = $this->db->get()->result_array(); // Change to result_array() for consistency
+
+        // Debug log (remove after testing)
+        if (count($result) > 0) {
+            error_log("First student data: " . print_r($result[0], true));
+        }
+
+        return $result;
     }
 
     /**

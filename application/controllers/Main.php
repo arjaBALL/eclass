@@ -142,7 +142,7 @@ class Main extends CI_Controller
             $this->data_loader->dropdowns(),
             [
                 'content' => 'attendance',
-                'scripts' => ['attendances']
+                'scripts' => ['attendances', 'face_recognition']
             ],
         );
         $this->load->view('main/main', $data);

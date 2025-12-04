@@ -38,7 +38,7 @@ class Subject_assignment_model extends CI_Model
 
     public function get_all_teacher_subjects($teacher_id)
     {
-        $this->db->select('sa.id, s.subject_name, s.subject_code, sm.semester');
+        $this->db->select('sa.id, sa.subject_id, s.subject_name, s.subject_code, sm.semester');
         $this->db->from('tbl_subject_assignments sa');
         $this->db->join('tbl_subjects s', 's.id = sa.subject_id', 'left');
         $this->db->join('tbl_semesters sm', 'sm.id = sa.semester_id', 'left');
@@ -47,27 +47,31 @@ class Subject_assignment_model extends CI_Model
         return $query->result();
     }
 
-    public function get_assignment($id) {
+    public function get_assignment($id)
+    {
         $this->db->where('id', $id);
         return $this->db->get('tbl_subject_assignments')->row_array();
     }
 
-    public function check_duplicate_edit($id, $subject_id, $teacher_id) {
-    $this->db->where('subject_id', $subject_id);
-    $this->db->where('teacher_id', $teacher_id);
-    $this->db->where('id !=', $id);
-    $query = $this->db->get('tbl_subject_assignments');
-    return $query->num_rows() > 0;
-}
+    public function check_duplicate_edit($id, $subject_id, $teacher_id)
+    {
+        $this->db->where('subject_id', $subject_id);
+        $this->db->where('teacher_id', $teacher_id);
+        $this->db->where('id !=', $id);
+        $query = $this->db->get('tbl_subject_assignments');
+        return $query->num_rows() > 0;
+    }
 
-public function update_assignment($id, $data) {
-    $this->db->where('id', $id);
-    return $this->db->update('tbl_subject_assignments', $data);
-}
+    public function update_assignment($id, $data)
+    {
+        $this->db->where('id', $id);
+        return $this->db->update('tbl_subject_assignments', $data);
+    }
 
 
     // Delete assignment
-    public function delete_assignment($id) {
+    public function delete_assignment($id)
+    {
         $this->db->where('id', $id);
         return $this->db->delete('tbl_subject_assignments');
     }
