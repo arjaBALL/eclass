@@ -3,12 +3,18 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Main extends CI_Controller
 {
-
     public function __construct()
     {
         parent::__construct();
-        $this->load->library('Data_loader');
+
+        // Load dependencies
+        $this->load->library(['Data_loader', 'session']);
         $this->load->helper('url');
+
+        // ✅ SESSION CHECK
+        if (!$this->session->userdata('user_id')) {
+            redirect('login');   // change this to your login controller
+        }
     }
 
     public function index()
@@ -21,7 +27,6 @@ class Main extends CI_Controller
     public function student()
     {
         $data = array_merge(
-            // $this->get_session_data(),
             $this->data_loader->dropdowns(),
             [
                 'content' => 'student',
@@ -34,7 +39,6 @@ class Main extends CI_Controller
     public function teacher()
     {
         $data = array_merge(
-            // $this->get_session_data(),
             $this->data_loader->dropdowns(),
             [
                 'content' => 'teacher',
@@ -47,7 +51,6 @@ class Main extends CI_Controller
     public function subject()
     {
         $data = array_merge(
-            // $this->get_session_data(),
             $this->data_loader->dropdowns(),
             [
                 'content' => 'subject',
@@ -60,7 +63,6 @@ class Main extends CI_Controller
     public function section()
     {
         $data = array_merge(
-            // $this->get_session_data(),
             $this->data_loader->dropdowns(),
             [
                 'content' => 'section',
@@ -73,7 +75,6 @@ class Main extends CI_Controller
     public function department()
     {
         $data = array_merge(
-            // $this->get_session_data(),
             $this->data_loader->dropdowns(),
             [
                 'content' => 'department',
@@ -86,7 +87,6 @@ class Main extends CI_Controller
     public function schedule()
     {
         $data = array_merge(
-            // $this->get_session_data(),
             $this->data_loader->dropdowns(),
             [
                 'content' => 'schedules',
@@ -99,7 +99,6 @@ class Main extends CI_Controller
     public function subject_assignment()
     {
         $data = array_merge(
-            // $this->get_session_data(),
             $this->data_loader->dropdowns(),
             [
                 'content' => 'subject_assignment',
@@ -112,7 +111,6 @@ class Main extends CI_Controller
     public function record_score()
     {
         $data = array_merge(
-            // $this->get_session_data(),
             $this->data_loader->dropdowns(),
             [
                 'content' => 'record_score',
@@ -125,7 +123,6 @@ class Main extends CI_Controller
     public function class_record()
     {
         $data = array_merge(
-            // $this->get_session_data(),
             $this->data_loader->dropdowns(),
             [
                 'content' => 'class_record',
@@ -138,11 +135,22 @@ class Main extends CI_Controller
     public function attendance()
     {
         $data = array_merge(
-            // $this->get_session_data(),
             $this->data_loader->dropdowns(),
             [
                 'content' => 'attendance',
                 'scripts' => ['attendances', 'face_recognition']
+            ],
+        );
+        $this->load->view('main/main', $data);
+    }
+
+     public function program()
+    {
+        $data = array_merge(
+            $this->data_loader->dropdowns(),
+            [
+                'content' => 'program',
+                'scripts' => ['programs']
             ],
         );
         $this->load->view('main/main', $data);

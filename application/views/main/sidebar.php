@@ -9,7 +9,7 @@
 
     <!-- Logo / Branding -->
     <div class="d-flex justify-content-center align-items-center">
-        <!-- <img src="<?= base_url('public/logo.png') ?>" class="rounded-circle float-start" style="width: 65px" alt=""> -->
+        <img src="<?= base_url('public/logo.png') ?>" class="rounded-circle float-start" style="width: 65px" alt="">
     </div>
     <div class="d-flex justify-content-center">
         <div class="fs-5 fw-bold">Eclassrecord</div>
@@ -80,6 +80,7 @@
                 <span>File Maintenance</span>
             </a>
             <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="<?= site_url('program') ?>">Program</a></li>
                 <li><a class="dropdown-item" href="<?= site_url('student') ?>">Students</a></li>
                 <li><a class="dropdown-item" href="<?= site_url('subject') ?>">Subjects</a></li>
                 <li><a class="dropdown-item" href="<?= site_url('teacher') ?>">Teachers</a></li>

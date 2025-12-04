@@ -19,7 +19,8 @@ class Api extends CI_Controller
         $this->load->model('Schedules_model');
         $this->load->model('Record_score_model');
         $this->load->model('Criteria_model');
-         $this->load->model('Grade_report_model');
+        $this->load->model('Grade_report_model');
+        $this->load->model('Program_model');
     }
 
     public function get_subjects()
@@ -68,6 +69,13 @@ class Api extends CI_Controller
     {
         header('Content-Type: application/json');
         $departments = $this->Department_model->get_all_departments();
+        echo json_encode($departments);
+    }
+
+     public function get_programs()
+    {
+        header('Content-Type: application/json');
+        $departments = $this->Program_model->get_all_programs();
         echo json_encode($departments);
     }
 
@@ -567,53 +575,127 @@ class Api extends CI_Controller
     }
 
     public function get_department($id)
-{
-    $this->load->model('Department_model');
-    $department = $this->Department_model->get_department($id);
-    if($department) {
-        echo json_encode($department);
-    } else {
-        echo json_encode(['status' => 'error', 'message' => 'Department not found']);
-    }
-}
-
-
-// Update department
-public function update_department($id)
-{
-    $this->load->model('Department_model');
-
-    $department = $this->input->post('department');
-    $status = $this->input->post('statusSelect');
-
-    if($this->Department_model->validate_data($department, $status, $id)) {
-        echo json_encode(['status' => 'error', 'message' => 'Department already exists']);
-        return;
+    {
+        $this->load->model('Department_model');
+        $department = $this->Department_model->get_department($id);
+        if($department) {
+            echo json_encode($department);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Department not found']);
+        }
     }
 
-    $data = [
-        'department' => $department,
-        'status' => $status
-    ];
 
-    if($this->Department_model->update_department($id, $data)) {
-        echo json_encode(['status' => 'success', 'message' => 'Department updated successfully']);
-    } else {
-        echo json_encode(['status' => 'error', 'message' => 'Failed to update department']);
+    // Update department
+    public function update_department($id)
+    {
+        $this->load->model('Department_model');
+
+        $department = $this->input->post('department');
+        $status = $this->input->post('statusSelect');
+
+        if($this->Department_model->validate_data($department, $status, $id)) {
+            echo json_encode(['status' => 'error', 'message' => 'Department already exists']);
+            return;
+        }
+
+        $data = [
+            'department' => $department,
+            'status' => $status
+        ];
+
+        if($this->Department_model->update_department($id, $data)) {
+            echo json_encode(['status' => 'success', 'message' => 'Department updated successfully']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Failed to update department']);
+        }
     }
-}
 
-// Delete department
-public function delete_department($id)
-{
-    $this->load->model('Department_model');
+    // Delete department
+    public function delete_department($id)
+    {
+        $this->load->model('Department_model');
 
-    if($this->Department_model->delete_department($id)) {
-        echo json_encode(['status' => 'success', 'message' => 'Department deleted successfully']);
-    } else {
-        echo json_encode(['status' => 'error', 'message' => 'Failed to delete department']);
+        if($this->Department_model->delete_department($id)) {
+            echo json_encode(['status' => 'success', 'message' => 'Department deleted successfully']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Failed to delete department']);
+        }
     }
-}
+
+     public function addPrograms()
+    {
+        $programs = $this->input->post('programs');
+        $programDetails = $this->input->post('programDetails');
+        $departmentSelect = $this->input->post('departmentSelect');
+
+        if (
+            empty($programs) ||
+            empty($programDetails) ||
+            empty($departmentSelect)
+        ) {
+            echo json_encode(['status' => 'error', 'message' => 'All fields are required']);
+            return;
+        }
+
+        $exists = $this->Program_model->validate_data($programs, $departmentSelect, $programDetails);
+
+        if ($exists) {
+            echo json_encode(['status' => 'error', 'message' => 'Program already exists']);
+            return;
+        }
+
+        $data = [
+            'program_name' => $programs,
+            'program_details' => $programDetails,
+            'department_id' => $departmentSelect,
+        ];
+
+        $insertData = $this->Program_model->insert_programs($data);
+
+        if ($insertData) {
+            echo json_encode(['status' => 'success']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Failed to insert programs']);
+        }
+    }
+    
+    
+    public function update_program($id)
+    {
+
+        $editProgramName = $this->input->post('editProgramName');
+         $editProgramDetails = $this->input->post('editProgramDetails');
+        $department = $this->input->post('departmentSelect');
+
+        if($this->Program_model->validate_data($editProgramName, $editProgramDetails,$department, $id)) {
+            echo json_encode(['department' => 'error', 'message' => 'Program already exists']);
+            return;
+        }
+
+        $data = [
+            'program_name' => $editProgramName,
+            'program_details' => $editProgramDetails,
+            'department_id' => $department
+        ];
+
+        if($this->Program_model->update_program($id, $data)) {
+            echo json_encode(['status' => 'success', 'message' => 'Program updated successfully']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Failed to update department']);
+        }
+    }
+
+     public function get_program($id)
+    {
+        $this->load->model('Department_model');
+        $program = $this->Program_model->get_program($id);
+        if($program) {
+            echo json_encode($program);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Department not found']);
+        }
+    }
 
     public function addSubjectAssignments()
     {

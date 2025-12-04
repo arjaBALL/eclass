@@ -114,6 +114,11 @@ $(document).ready(function () {
 					}" title="Show schedules subject">
 							<i class="fa-solid fa-file-circle-question"></i>
 						</button>
+						<button class="btn btn-sm btn-warning printReportBtn" data-schedule-id="${
+							schedules.id
+						}" title="Print Report">
+							<i class="fa-solid fa-print"></i>
+						</button>
 				</td>
 			</tr>`;
 			});
@@ -170,6 +175,96 @@ $(document).ready(function () {
 		}
 
 		$("#gradeReportData").html(html);
+	}
+
+	// Handle Print Report Button Click
+	$(document).on("click", ".printReportBtn", function () {
+		const scheduleId = $(this).data("schedule-id");
+
+		// Show loading indicator
+		showLoadingOverlay();
+
+		// Create form data
+		const formData = new FormData();
+		formData.append("schedule_id", scheduleId);
+
+		// FIXED: Correct URL to match CodeIgniter routing
+		fetch(BASE_URL + "index.php/Class_list/generate_pdf", {
+			method: "POST",
+			body: formData,
+		})
+			.then((response) => {
+				if (!response.ok) {
+					throw new Error("Network response was not ok");
+				}
+				return response.blob();
+			})
+			.then((blob) => {
+				// Create a URL for the blob
+				const url = window.URL.createObjectURL(blob);
+
+				// Open PDF in new window
+				window.open(url, "_blank");
+
+				// Clean up
+				setTimeout(() => {
+					window.URL.revokeObjectURL(url);
+				}, 100);
+
+				hideLoadingOverlay();
+			})
+			.catch((error) => {
+				console.error("Error:", error);
+				alert("Error generating PDF. Please try again.");
+				hideLoadingOverlay();
+			});
+	});
+
+	function showLoadingOverlay() {
+		// Remove existing overlay if any
+		$("#pdfLoadingOverlay").remove();
+
+		// Create loading overlay
+		const overlay = `
+			<div id="pdfLoadingOverlay" style="
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				background: rgba(0,0,0,0.7);
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				z-index: 9999;
+			">
+				<div style="
+					background: white;
+					padding: 30px 40px;
+					border-radius: 8px;
+					text-align: center;
+					box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+				">
+					<div class="spinner-border text-primary mb-3" role="status">
+						<span class="visually-hidden">Loading...</span>
+					</div>
+					<div style="font-size: 16px; font-weight: 500; color: #333;">
+						<i class="fa-solid fa-file-pdf"></i> Generating PDF...
+					</div>
+					<div style="font-size: 12px; color: #666; margin-top: 8px;">
+						Please wait
+					</div>
+				</div>
+			</div>
+		`;
+
+		$("body").append(overlay);
+	}
+
+	function hideLoadingOverlay() {
+		$("#pdfLoadingOverlay").fadeOut(300, function () {
+			$(this).remove();
+		});
 	}
 
 	$("#filterSubjectSelect").on("change", function () {
